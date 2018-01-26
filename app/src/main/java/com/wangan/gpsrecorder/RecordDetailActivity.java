@@ -51,7 +51,7 @@ public class RecordDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_record_detial);
+        setContentView(R.layout.activity_record_detail);
 
         mImageView =  findViewById(R.id.iv_img1);
         mButtonTake =  findViewById(R.id.btn_take_photo);
