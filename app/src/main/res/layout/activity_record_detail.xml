@@ -248,6 +248,11 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
+        <com.tianditu.android.maps.MapView
+            android:id="@+id/detail_map_view"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"/>
+
 
     </LinearLayout>
 
@@ -268,7 +273,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="10"
-            android:text="保存" />
+            android:text="结束当前采集" />
 
         <Button
             android:id="@+id/cancel_point_details"

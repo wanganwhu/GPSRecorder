@@ -7,7 +7,7 @@
     tools:context="com.wangan.gpsrecorder.MapActivity">
 
     <com.tianditu.android.maps.MapView
-        android:id="@+id/main_mapview"
+        android:id="@+id/main_map_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>
 
