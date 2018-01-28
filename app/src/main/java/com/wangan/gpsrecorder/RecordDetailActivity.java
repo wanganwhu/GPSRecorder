@@ -56,9 +56,10 @@ public class RecordDetailActivity extends AppCompatActivity {
     public static final int CROP_PHOTO = 2;
     public static final int CHOOSE_PHOTO = 3;
 
-    private Button mButtonTake, mButtonChoose, geomButtonGetLocation;
+    private Button  dealPhoto;
     private TextView location_information;
-    private ImageView mImageView;
+    private ImageView[] imageView = null;
+    private int imageViewIndex = 2;
     private Uri mImgUri;
 
     @Override
@@ -66,9 +67,11 @@ public class RecordDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_record_detail);
 
-        mImageView =  findViewById(R.id.image_1);
-        mButtonTake =  findViewById(R.id.btn_take_photo);
-        mButtonChoose =  findViewById(R.id.btn_choose_photo);
+        imageView = new ImageView[3];
+        imageView[0] =  findViewById(R.id.image_1);
+        imageView[1] =  findViewById(R.id.image_2);
+        imageView[2] =  findViewById(R.id.image_3);
+        dealPhoto = findViewById(R.id.deal_photo);
 
         MapView mMapView =  findViewById(R.id.detail_map_view);
         //设置启用内置的缩放控件
@@ -94,51 +97,60 @@ public class RecordDetailActivity extends AppCompatActivity {
         mMapController.setZoom(15);
 
 
-        mButtonChoose.setOnClickListener(new OnClickListener() {
-
+        dealPhoto.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                // 打开相册
-                startActivityForResult(intent, CHOOSE_PHOTO);
-            }
-        });
+                final String[] strArray = new String[]{"点我拍照","选择照片"};
+                AlertDialog.Builder builder = new
+                        AlertDialog.Builder(RecordDetailActivity.this);//实例化builder
+                //builder.setIcon(R.mipmap.ic_launcher);//设置图标
+                //builder.setTitle("设施点类型");//设置标题
+                //设置列表
+                builder.setItems(strArray, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //改变照片文件下标
+                        imageViewIndex++;
 
-        mButtonTake.setOnClickListener(new OnClickListener() {
+                        if(which == 1){
+                            Intent intent = new Intent();
+                            intent.setType("image/*");
+                            intent.setAction(Intent.ACTION_GET_CONTENT);
+                            // 打开相册
+                            startActivityForResult(intent, CHOOSE_PHOTO);
+                        }else{
+                            //新建一个File，传入文件夹目录
+                            File file = new File(Environment.getExternalStorageDirectory()+ "/GPSRecorder");
+                            //判断文件夹是否存在，如果不存在就创建，否则不创建
+                            if (!file.exists()) {
+                                //通过file的mkdirs()方法创建<span style="color:#FF0000;">目录中包含却不存在</span>的文件夹
+                                file.mkdirs();
+                            }
+                            // 创建File对象，用于存储拍照后的图片，并存放在SD卡的根目录下
+                            File outputImg = new File(file, System.currentTimeMillis()+"my_img"+imageViewIndex%3+".jpg");
+                            if (outputImg.exists()) {
+                                outputImg.delete();
+                            }
+                            try {
+                                outputImg.createNewFile();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
 
-            @Override
-            public void onClick(View v) {
-
-                //新建一个File，传入文件夹目录
-                File file = new File(Environment.getExternalStorageDirectory()+ "/aaa");
-                //判断文件夹是否存在，如果不存在就创建，否则不创建
-                if (!file.exists()) {
-                    //通过file的mkdirs()方法创建<span style="color:#FF0000;">目录中包含却不存在</span>的文件夹
-                    file.mkdirs();
-                }
-                // 创建File对象，用于存储拍照后的图片，并存放在SD卡的根目录下
-                File outputImg = new File(file, "my_img.jpg");
-                if (outputImg.exists()) {
-                    outputImg.delete();
-                }
-                try {
-                    outputImg.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                // 将File对象转换为Uri对象
-                //mImgUri = Uri.fromFile(outputImg);
-                mImgUri = FileProvider.getUriForFile(RecordDetailActivity.this,
-                        BuildConfig.APPLICATION_ID + ".provider",
-                        outputImg);
-                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-                // 指定图片的输出地址
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, mImgUri);
-                // 启动相机程序
-                startActivityForResult(intent, TAKE_PHOTO);
+                            // 将File对象转换为Uri对象
+                            //mImgUri = Uri.fromFile(outputImg);
+                            mImgUri = FileProvider.getUriForFile(RecordDetailActivity.this,
+                                    BuildConfig.APPLICATION_ID + ".provider",
+                                    outputImg);
+                            Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                            // 指定图片的输出地址
+                            intent.putExtra(MediaStore.EXTRA_OUTPUT, mImgUri);
+                            // 启动相机程序
+                            startActivityForResult(intent, TAKE_PHOTO);
+                        }
+                    }
+                });
+                builder.create().show();//创建并显示对话框
             }
         });
 
@@ -160,7 +172,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                     try {
                         Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(mImgUri));
                         // 将裁剪后的照片显示出来
-                        mImageView.setImageBitmap(bitmap);
+                        imageView[imageViewIndex%3].setImageBitmap(bitmap);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -172,7 +184,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                     try {
                         Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(mImgUri));
                         // 将裁剪后的照片显示出来
-                        mImageView.setImageBitmap(bitmap);
+                        imageView[imageViewIndex%3].setImageBitmap(bitmap);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -252,7 +264,7 @@ public class RecordDetailActivity extends AppCompatActivity {
     private void displayImage(String imagePath) {
         if (imagePath != null) {
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
-            mImageView.setImageBitmap(bitmap);
+            imageView[imageViewIndex%3].setImageBitmap(bitmap);
         } else {
             Toast.makeText(RecordDetailActivity.this, "获取图片失败", Toast.LENGTH_SHORT).show();
         }

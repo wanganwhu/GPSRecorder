@@ -14,4 +14,7 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="add__facility">    设施点采集</string>
+    <string name="manage_facility">    设施点管理</string>
+    <string name="study_data">    学习资料</string>
 </resources>
