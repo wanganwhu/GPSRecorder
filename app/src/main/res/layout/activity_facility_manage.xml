@@ -9,6 +9,13 @@
     >
 
     <Button
+        android:id="@+id/read_local_upload_facility"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="查看已上传设施点" />
+
+    <Button
         android:id="@+id/handle_local_facility"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

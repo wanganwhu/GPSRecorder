@@ -19,6 +19,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,12 +32,16 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
+import android.view.Display;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.support.v7.app.AppCompatActivity;
@@ -56,8 +62,11 @@ public class RecordDetailActivity extends AppCompatActivity {
     public static final int CROP_PHOTO = 2;
     public static final int CHOOSE_PHOTO = 3;
 
-    private Button  dealPhoto;
+    private Button  dealPhoto,save_point_details,save_all_points_details,cancel_point_details;
     private TextView location_information;
+    //必填的信息
+    private EditText scene1,scene2,facility_type,county,street,community,facility_address;
+    private
     private ImageView[] imageView = null;
     private int imageViewIndex = 2;
     private Uri mImgUri;
@@ -72,6 +81,10 @@ public class RecordDetailActivity extends AppCompatActivity {
         imageView[1] =  findViewById(R.id.image_2);
         imageView[2] =  findViewById(R.id.image_3);
         dealPhoto = findViewById(R.id.deal_photo);
+
+        save_point_details = findViewById(R.id.save_point_details);
+        save_all_points_details = findViewById(R.id.save_all_points_details);
+        cancel_point_details = findViewById(R.id.cancel_point_details);
 
         MapView mMapView =  findViewById(R.id.detail_map_view);
         //设置启用内置的缩放控件
@@ -154,6 +167,13 @@ public class RecordDetailActivity extends AppCompatActivity {
             }
         });
 
+        save_point_details.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
     }
 
     @Override
@@ -170,9 +190,17 @@ public class RecordDetailActivity extends AppCompatActivity {
                     startActivityForResult(intent, CROP_PHOTO);*/
 
                     try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(mImgUri));
-                        // 将裁剪后的照片显示出来
-                        imageView[imageViewIndex%3].setImageBitmap(bitmap);
+                        final Bitmap bigBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(mImgUri));
+
+                        Bitmap smallBitmap = createScaledBitmap(bigBitmap,22,40,true);
+                        imageView[imageViewIndex%3].setImageBitmap(smallBitmap);
+                        imageView[imageViewIndex%3].setOnClickListener(new OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                getBigPicture(bigBitmap);
+
+                            }
+                        });
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -263,8 +291,18 @@ public class RecordDetailActivity extends AppCompatActivity {
      */
     private void displayImage(String imagePath) {
         if (imagePath != null) {
-            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
-            imageView[imageViewIndex%3].setImageBitmap(bitmap);
+            // 调用压缩方法压缩图片
+            final Bitmap bigBitmap = BitmapFactory.decodeFile(imagePath);
+            Bitmap smallBitmap = createScaledBitmap(bigBitmap,22,40,true);
+            imageView[imageViewIndex%3].setImageBitmap(smallBitmap);
+            imageView[imageViewIndex%3].setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    getBigPicture(bigBitmap);
+
+                }
+            });
+
         } else {
             Toast.makeText(RecordDetailActivity.this, "获取图片失败", Toast.LENGTH_SHORT).show();
         }
@@ -289,6 +327,82 @@ public class RecordDetailActivity extends AppCompatActivity {
             cursor.close();
         }
         return path;
+    }
+
+    /**
+     * 压缩图片
+     *
+     *
+     */
+    private Bitmap createThumbnail(String filepath, int i) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = i;
+        return BitmapFactory.decodeFile(filepath, options);
+    }
+
+    /**
+     * 判断网络是否正常
+     *
+     *
+     */
+    public boolean isNetworkConnected(Context context) {
+        if (context == null) {
+            return false;
+        }
+        ConnectivityManager connMgr = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * 点击图片放大查看
+     *
+     */
+    private void getBigPicture(Bitmap b) {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View imgEntryView = inflater.inflate(R.layout.dialog_photo_entry, null); // 加载自定义的布局文件
+        final AlertDialog dialog = new AlertDialog.Builder(this).create();
+        ImageView img = (ImageView) imgEntryView.findViewById(R.id.large_image);
+        if (b != null) {
+            Display display = RecordDetailActivity.this.getWindowManager()
+                    .getDefaultDisplay();
+            int scaleWidth = display.getWidth();
+            int height = b.getHeight();// 图片的真实高度
+            int width = b.getWidth();// 图片的真实宽度
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) img.getLayoutParams();
+            lp.width = scaleWidth;// 调整宽度
+            lp.height = (height * scaleWidth) / width;// 调整高度
+            img.setLayoutParams(lp);
+            img.setImageBitmap(b);
+            dialog.setView(imgEntryView); // 自定义dialog
+            dialog.show();
+        }
+        // 点击布局文件（也可以理解为点击大图）后关闭dialog，这里的dialog不需要按钮
+        imgEntryView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View paramView) {
+                if (dialog.isShowing()) {
+                    dialog.cancel();
+                }
+            }
+        });
+    }
+
+
+    public static Bitmap createScaledBitmap(Bitmap bitmap, int iconWidth, int iconHeight, boolean filter) {
+        Bitmap bitmap2;
+        try {
+            bitmap2 = Bitmap.createScaledBitmap(bitmap, iconWidth, iconHeight, filter);
+        } catch (OutOfMemoryError localOutOfMemoryError) {
+            System.gc();
+            bitmap2 = Bitmap.createScaledBitmap(bitmap, iconWidth, iconHeight, filter);
+        }
+        return bitmap2;
     }
 
 
