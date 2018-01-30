@@ -1,12 +1,19 @@
 package com.wangan.gpsrecorder;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.os.Bundle;
 import android.util.Log;
@@ -103,6 +110,8 @@ public class MapActivity extends Activity implements View.OnClickListener{
         mMapController.setZoom(15);
 
     }
+
+
 
     @Override
     public void onClick(View v) {

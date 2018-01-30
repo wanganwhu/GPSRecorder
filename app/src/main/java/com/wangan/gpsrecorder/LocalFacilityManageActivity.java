@@ -29,6 +29,7 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 final String[] strArray = new String[]{"点","线","面"};
+                final String[] strArray2 = new String[]{"point","polyline","polygon"};
                 AlertDialog.Builder builder = new
                         AlertDialog.Builder(LocalFacilityManageActivity.this);//实例化builder
                //builder.setIcon(R.mipmap.ic_launcher);//设置图标
@@ -40,7 +41,9 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
                         /*Toast.makeText(LocalFacilityManageActivity.this,
                                 strArray[which],Toast.LENGTH_SHORT).show();*/
                         Intent intent = new Intent(LocalFacilityManageActivity.this,
-                        RecordDetailActivity.class);
+                                RecordDetailActivity.class);
+                        intent.putExtra("geometryType",strArray2[which]);
+
                         startActivity(intent);
                     }
                 });
