@@ -129,7 +129,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         (Activity) context,
                         Manifest.permission.READ_EXTERNAL_STORAGE)) {
                     showDialog("External storage", context,
-                            Manifest.permission.READ_EXTERNAL_STORAGE);
+                            Manifest.permission.READ_EXTERNAL_STORAGE,MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
 
                 } else {
                     ActivityCompat
@@ -161,7 +161,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         (Activity) context,
                         Manifest.permission.ACCESS_FINE_LOCATION)) {
                     showDialog("Get Location", context,
-                            Manifest.permission.ACCESS_FINE_LOCATION);
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
 
                 } else {
                     ActivityCompat
@@ -181,7 +182,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     public void showDialog(final String msg, final Context context,
-                           final String permission) {
+                           final String permission, final int permissionCode) {
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
         alertBuilder.setCancelable(true);
         alertBuilder.setTitle("Permission necessary");
@@ -191,7 +192,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     public void onClick(DialogInterface dialog, int which) {
                         ActivityCompat.requestPermissions((Activity) context,
                                 new String[] { permission },
-                                MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+                                permissionCode);
                     }
                 });
         AlertDialog alert = alertBuilder.create();

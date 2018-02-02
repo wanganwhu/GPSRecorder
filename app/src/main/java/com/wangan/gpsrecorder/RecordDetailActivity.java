@@ -20,7 +20,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
+
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -65,6 +65,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 
 public class RecordDetailActivity extends AppCompatActivity {
+    public static final String TAG = "RecordDetailActivity";
     public static final int TAKE_PHOTO = 1;
     public static final int CROP_PHOTO = 2;
     public static final int CHOOSE_PHOTO = 3;
@@ -122,7 +123,15 @@ public class RecordDetailActivity extends AppCompatActivity {
 
         MapView mMapView =  findViewById(R.id.detail_map_view);
 
+
         geometryType = getIntent().getStringExtra("geometryType");
+        Toast.makeText(this,"geometryType: "+ geometryType,Toast.LENGTH_LONG).show();
+
+        if (geometryType.equals("point")) {
+            Log.d(TAG,"geometryType: "+ geometryType);
+            save_all_points_details.setVisibility(View.GONE);
+        }
+        Log.d(TAG,"geometryType: "+ geometryType);
         /////////////////////////////////////////////////////////////////////////////////////////
         //地图相关
         //设置启用内置的缩放控件
@@ -289,7 +298,120 @@ public class RecordDetailActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
 
+    @Override
+    protected  void onResume(){
+        super.onResume();
+        if (checkPermissionREAD_EXTERNAL_STORAGE(this)) {
+        }else{
+            checkPermissionREAD_EXTERNAL_STORAGE(this);
+        }
+
+        if (checkPermissionACCESS_FINE_LOCATION(this)) {
+        }else{
+            checkPermissionACCESS_FINE_LOCATION(this);
+        }
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
+
+    public boolean checkPermissionREAD_EXTERNAL_STORAGE(
+            final Context context) {
+        int currentAPIVersion = Build.VERSION.SDK_INT;
+        if (currentAPIVersion >= android.os.Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(context,
+                    Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
+                        (Activity) context,
+                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    showDialog("External storage", context,
+                            Manifest.permission.READ_EXTERNAL_STORAGE,MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+
+                } else {
+                    ActivityCompat
+                            .requestPermissions(
+                                    (Activity) context,
+                                    new String[] { Manifest.permission.READ_EXTERNAL_STORAGE },
+                                    MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+                }
+                return false;
+            } else {
+                return true;
+            }
+
+        } else {
+            return true;
+        }
+    }
+
+
+    public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 123;
+
+    public boolean checkPermissionACCESS_FINE_LOCATION(
+            final Context context) {
+        int currentAPIVersion = Build.VERSION.SDK_INT;
+        if (currentAPIVersion >= android.os.Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(context,
+                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
+                        (Activity) context,
+                        Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    showDialog("Get Location", context,
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+
+                } else {
+                    ActivityCompat
+                            .requestPermissions(
+                                    (Activity) context,
+                                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+                }
+                return false;
+            } else {
+                return true;
+            }
+
+        } else {
+            return true;
+        }
+    }
+
+    public void showDialog(final String msg, final Context context,
+                           final String permission, final int permissionCode) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
+        alertBuilder.setCancelable(true);
+        alertBuilder.setTitle("Permission necessary");
+        alertBuilder.setMessage(msg + " permission is necessary");
+        alertBuilder.setPositiveButton(android.R.string.yes,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        ActivityCompat.requestPermissions((Activity) context,
+                                new String[] { permission },
+                                permissionCode);
+                    }
+                });
+        AlertDialog alert = alertBuilder.create();
+        alert.show();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // do your stuff
+                } else {
+                    Toast.makeText(RecordDetailActivity.this, "GET_ACCOUNTS Denied",
+                            Toast.LENGTH_SHORT).show();
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions,
+                        grantResults);
+        }
     }
 
     @Override
