@@ -123,6 +123,9 @@ public class RecordDetailActivity extends AppCompatActivity {
         MapView mMapView =  findViewById(R.id.detail_map_view);
 
         geometryType = getIntent().getStringExtra("geometryType");
+        if (geometryType.equals("point")) {
+            save_all_points_details.setVisibility(View.GONE);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////
         //地图相关
         //设置启用内置的缩放控件
@@ -264,6 +267,10 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                 Toast.makeText(RecordDetailActivity.this,
                                                         "保存成功",
                                                         Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(
+                                                        RecordDetailActivity.this,
+                                                        RecordDetailActivity.class);
+                                                startActivity(intent);
 
                                             }else{
                                                 Toast.makeText(RecordDetailActivity.this,
