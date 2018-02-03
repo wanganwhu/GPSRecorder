@@ -43,7 +43,6 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
                         Intent intent = new Intent(LocalFacilityManageActivity.this,
                                 RecordDetailActivity.class);
                         intent.putExtra("geometryType",strArray2[which]);
-
                         startActivity(intent);
                     }
                 });

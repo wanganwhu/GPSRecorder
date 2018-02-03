@@ -125,13 +125,10 @@ public class RecordDetailActivity extends AppCompatActivity {
 
 
         geometryType = getIntent().getStringExtra("geometryType");
-        Toast.makeText(this,"geometryType: "+ geometryType,Toast.LENGTH_LONG).show();
 
         if (geometryType.equals("point")) {
-            Log.d(TAG,"geometryType: "+ geometryType);
             save_all_points_details.setVisibility(View.GONE);
         }
-        Log.d(TAG,"geometryType: "+ geometryType);
         /////////////////////////////////////////////////////////////////////////////////////////
         //地图相关
         //设置启用内置的缩放控件
@@ -273,6 +270,10 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                 Toast.makeText(RecordDetailActivity.this,
                                                         "保存成功",
                                                         Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(
+                                                        RecordDetailActivity.this,
+                                                        RecordDetailActivity.class);
+                                                startActivity(intent);
 
                                             }else{
                                                 Toast.makeText(RecordDetailActivity.this,
