@@ -1,5 +1,6 @@
 package com.wangan.gpsrecorder.model;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -10,7 +11,6 @@ public class PointData {
 
     private String scene1;
     private String scene2;
-
     private String facilitytpye;
     private String county;
     private String street;
@@ -134,5 +134,42 @@ public class PointData {
 
     public String getOtherInformation() {
         return otherInformation;
+    }
+
+    @Override
+    public String toString() {
+        return "{"
+                + "\"scene1\":\"" + scene1 + "\""
+                + ", \"scene2\":\"" + scene2 + "\""
+                + ", \"facilitytpye\":\"" + facilitytpye + "\""
+                + ", \"county\":\"" + county + "\""
+                + ", \"street\":\"" + street + "\""
+                + ", \"community\":\"" + community + "\""
+                + ", \"facilityaddress\":\"" + facilityaddress + "\""
+                + ", \"quality\":\"" + quality + "\""
+                + ", \"imagePaths\":" + arrayToString(imagePaths)
+                + ", \"coordinate\":" + coordinate
+                + ", \"otherInformation\":\"" + otherInformation + "\""
+                + "}";
+    }
+
+    public static String arrayToString(Object[] a) {
+        if (a == null)
+            return "\"\"";
+
+        int iMax = a.length - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = 0; ; i++) {
+            b.append("\"");
+            b.append(String.valueOf(a[i])=="null"?"":String.valueOf(a[i]));
+            b.append("\"");
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(", ");
+        }
     }
 }

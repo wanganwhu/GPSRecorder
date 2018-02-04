@@ -4,7 +4,6 @@ package com.wangan.gpsrecorder;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import android.Manifest;
@@ -46,7 +45,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.support.v7.app.AppCompatActivity;
 
@@ -60,6 +58,7 @@ import com.tianditu.android.maps.renderoption.DrawableOption;
 import com.wangan.gpsrecorder.model.Coordinate;
 import com.wangan.gpsrecorder.model.PointData;
 import com.wangan.gpsrecorder.model.PointDetails;
+import com.wangan.gpsrecorder.util.LocationUtils;
 
 import javax.microedition.khronos.opengles.GL10;
 
@@ -92,6 +91,9 @@ public class RecordDetailActivity extends AppCompatActivity {
 
     private int imageViewIndex = 2;
     private Uri mImgUri;
+
+    //所有填写的信息
+    ArrayList<PointData> all = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -264,30 +266,51 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                         coordinate,
                                                         more_information.getText().toString().trim()
                                                 );
-                                                ArrayList<PointData> all = new ArrayList<>();
+
                                                 all.add(pointData);
                                                 p.setData(all);
                                                 Toast.makeText(RecordDetailActivity.this,
                                                         "保存成功",
                                                         Toast.LENGTH_SHORT).show();
-                                                Intent intent = new Intent(
+                                                Log.d("llll",pointData.toString());
+                                                /*Intent intent = new Intent(
                                                         RecordDetailActivity.this,
                                                         RecordDetailActivity.class);
-                                                startActivity(intent);
+                                                startActivity(intent);*/
 
                                             }else{
                                                 Toast.makeText(RecordDetailActivity.this,
                                                         "请拍摄现场照片,最多拍摄三张。",
                                                         Toast.LENGTH_SHORT).show();
                                             }
+                                        } else {
+                                            Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                                    ,Toast.LENGTH_LONG).show();
                                         }
+                                    }else{
+                                        Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                                ,Toast.LENGTH_LONG).show();
                                     }
+                                }else {
+                                    Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                            ,Toast.LENGTH_LONG).show();
                                 }
+                            } else {
+                                Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                        ,Toast.LENGTH_LONG).show();
                             }
 
+                        } else {
+                            Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                    ,Toast.LENGTH_LONG).show();
                         }
+                    }else {
+                        Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                ,Toast.LENGTH_LONG).show();
                     }
-
+                }else {
+                    Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                            ,Toast.LENGTH_LONG).show();
                 }
 
             }
@@ -327,7 +350,8 @@ public class RecordDetailActivity extends AppCompatActivity {
                         (Activity) context,
                         Manifest.permission.READ_EXTERNAL_STORAGE)) {
                     showDialog("External storage", context,
-                            Manifest.permission.READ_EXTERNAL_STORAGE,MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+                            Manifest.permission.
+                                    READ_EXTERNAL_STORAGE,MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
 
                 } else {
                     ActivityCompat
@@ -601,11 +625,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         ConnectivityManager connMgr = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return networkInfo != null;
     }
 
     /**
@@ -617,7 +637,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         //加载自定义的布局文件
         View imgEntryView = inflater.inflate(R.layout.dialog_photo_entry, null);
         final AlertDialog dialog = new AlertDialog.Builder(this).create();
-        ImageView img = (ImageView) imgEntryView.findViewById(R.id.large_image);
+        ImageView img = imgEntryView.findViewById(R.id.large_image);
         if (b != null) {
             Display display = RecordDetailActivity.this.getWindowManager()
                     .getDefaultDisplay();

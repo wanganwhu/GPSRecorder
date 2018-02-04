@@ -38,8 +38,16 @@ public class PointDetails {
         return data;
     }
 
+    @Override
+    public String toString() {
+        return "{\"PointDetails\":{"
+                + "\"id\":\"" + id + "\""
+                + ", \"geometrytype\":\"" + geometrytype + "\""
+                + ", \"data\":" + data
+                + "}}";
+    }
 }
-//===========================
+
 
 
 

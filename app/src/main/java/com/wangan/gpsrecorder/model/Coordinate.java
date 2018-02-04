@@ -10,6 +10,12 @@ public class Coordinate {
     private int longitude;
     private int latitude;
 
+    @Override
+    public String toString() {
+        return "{\"longitude\":\"" + longitude + "\""
+                + ", \"latitude\":\"" + latitude + "\"}";
+    }
+
     public Coordinate(int longitude, int latitude) {
         this.longitude = longitude;
         this.latitude = latitude;

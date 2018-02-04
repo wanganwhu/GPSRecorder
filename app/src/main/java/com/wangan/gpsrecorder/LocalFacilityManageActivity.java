@@ -19,8 +19,8 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_facility_manage);
-        handleLocalFacility = (Button)findViewById(R.id.handle_local_facility);
-        addLocalFacility = (Button)findViewById(R.id.add_local_facility);
+        handleLocalFacility = findViewById(R.id.handle_local_facility);
+        addLocalFacility = findViewById(R.id.add_local_facility);
 
 
 

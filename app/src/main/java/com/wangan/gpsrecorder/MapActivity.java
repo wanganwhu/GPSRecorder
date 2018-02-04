@@ -51,9 +51,9 @@ public class MapActivity extends Activity implements View.OnClickListener{
         setContentView(R.layout.activity_map);
         MapView mMapView =  findViewById(R.id.main_map_view);
         initWindow();
-        drawerLayout = (DrawerLayout) findViewById(R.id.activity_na);
-        navigationView = (NavigationView) findViewById(R.id.nav);
-        menu= (ImageView) findViewById(R.id.main_menu);
+        drawerLayout = findViewById(R.id.activity_na);
+        navigationView = findViewById(R.id.nav);
+        menu= findViewById(R.id.main_menu);
         View headerView = navigationView.getHeaderView(0);
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动，只通过点击按钮来滑动
         menu.setOnClickListener(this);
