@@ -22,8 +22,14 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
         handleLocalFacility = findViewById(R.id.handle_local_facility);
         addLocalFacility = findViewById(R.id.add_local_facility);
 
-
-
+        handleLocalFacility.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LocalFacilityManageActivity.this,
+                        HandleLocalFacilityActivity.class);
+                startActivity(intent);
+            }
+        });
 
         addLocalFacility.setOnClickListener(new View.OnClickListener() {
             @Override

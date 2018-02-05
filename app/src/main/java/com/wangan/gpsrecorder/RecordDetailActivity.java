@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -14,6 +15,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -48,6 +50,8 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.support.v7.app.AppCompatActivity;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.tianditu.android.maps.GeoPoint;
 import com.tianditu.android.maps.MapController;
 import com.tianditu.android.maps.MapView;
@@ -68,6 +72,11 @@ public class RecordDetailActivity extends AppCompatActivity {
     public static final int TAKE_PHOTO = 1;
     public static final int CROP_PHOTO = 2;
     public static final int CHOOSE_PHOTO = 3;
+
+    final Gson gson = new Gson();
+    SharedPreferences sharedPreferences = null;
+    SharedPreferences.Editor editor = null;
+    SharedPreferences pref = null;
 
     private Button  dealPhoto,save_point_details,save_all_points_details,cancel_point_details;
 
@@ -92,8 +101,14 @@ public class RecordDetailActivity extends AppCompatActivity {
     private int imageViewIndex = 2;
     private Uri mImgUri;
 
-    //所有填写的信息
-    ArrayList<PointData> all = new ArrayList<>();
+    //此activity中填写的所有信息（当保存的sharedperferences为空时，方便存储）
+    private List<PointDetails> newRecordDetail = new ArrayList<>();
+    //此activity中填写的点信息集合
+    ArrayList<PointData> pointDataList = new ArrayList<>();
+    //此activity中填写的所有信息
+    PointDetails p = new PointDetails();
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +141,13 @@ public class RecordDetailActivity extends AppCompatActivity {
         MapView mMapView =  findViewById(R.id.detail_map_view);
 
 
+        sharedPreferences = RecordDetailActivity.this.getSharedPreferences("data",MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        pref = getSharedPreferences("data",MODE_PRIVATE);
+
         geometryType = getIntent().getStringExtra("geometryType");
+        p.setId((int)System.currentTimeMillis());
+        p.setGeometrytype(geometryType);
 
         if (geometryType.equals("point")) {
             save_all_points_details.setVisibility(View.GONE);
@@ -234,8 +255,202 @@ public class RecordDetailActivity extends AppCompatActivity {
             }
         });
 
-        //保存按钮
-        save_point_details.setOnClickListener(new OnClickListener() {
+        if (geometryType.equals("point")) {
+            //当是点的时候保存当前这个点，就结束采集
+            save_point_details.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkAndFocus(scene1)){
+                        if (checkAndFocus(scene2)){
+                            if (checkAndFocus(facilityType)){
+                                if (checkAndFocus (county)){
+                                    if (checkAndFocus(street)){
+                                        if(checkAndFocus(community)){
+                                            if (checkAndFocus(facilityAddress)){
+                                                if (imageView[0].getDrawable() != null){
+                                                    Coordinate coordinate =new Coordinate(
+                                                            mLongitude,mLatitude);
+                                                    PointData pointData = new PointData(
+                                                            scene1.getText().toString().trim(),
+                                                            scene2.getText().toString().trim(),
+                                                            facilityType.getText().toString().trim(),
+                                                            county.getText().toString().trim(),
+                                                            street.getText().toString().trim(),
+                                                            community.getText().toString().trim(),
+                                                            facilityAddress.getText().toString().
+                                                                    trim(),
+                                                            facilityQuality,
+                                                            imagePaths,
+                                                            coordinate,
+                                                            more_information.getText().toString().
+                                                                    trim()
+                                                    );
+
+                                                    pointDataList.add(pointData);
+                                                    p.setData(pointDataList);
+                                                    newRecordDetail.add(p);
+                                                    String unUploadDataJson = pref.getString
+                                                            ("UnUploadData","");
+                                                    if(unUploadDataJson == null ||
+                                                            unUploadDataJson.equals("")){
+                                                        Log.d(TAG,"unUploadDataJson:"+gson.toJson(newRecordDetail));
+                                                        editor.putString("UnUploadData",
+                                                                gson.toJson(newRecordDetail));
+                                                        editor.apply();
+                                                    } else{
+                                                        List<PointDetails> allUnUploadData =
+                                                                gson.fromJson(unUploadDataJson,
+                                                                        new TypeToken<List<PointDetails>>
+                                                                                (){}.getType());
+                                                        allUnUploadData.addAll(newRecordDetail);
+                                                        Log.d(TAG,"unUploadDataJson:"+gson.toJson(allUnUploadData));
+                                                        editor.putString("UnUploadData",
+                                                                gson.toJson(allUnUploadData));
+                                                        editor.apply();
+                                                    }
+
+                                                    Toast.makeText(RecordDetailActivity.this,
+                                                            "保存成功",
+                                                            Toast.LENGTH_SHORT).show();
+                                                    //保存完，考虑上传
+
+                                                /*Intent intent = new Intent(
+                                                        RecordDetailActivity.this,
+                                                        RecordDetailActivity.class);
+                                                startActivity(intent);*/
+
+                                                }else{
+                                                    Toast.makeText(RecordDetailActivity.this,
+                                                            "请拍摄现场照片,最多拍摄三张。",
+                                                            Toast.LENGTH_SHORT).show();
+                                                }
+                                            } else {
+                                                Toast.makeText(RecordDetailActivity.this,
+                                                        "还有必填项没有填写！"
+                                                        ,Toast.LENGTH_LONG).show();
+                                            }
+                                        }else{
+                                            Toast.makeText(RecordDetailActivity.this,
+                                                    "还有必填项没有填写！"
+                                                    ,Toast.LENGTH_LONG).show();
+                                        }
+                                    }else {
+                                        Toast.makeText(RecordDetailActivity.this,
+                                                "还有必填项没有填写！"
+                                                ,Toast.LENGTH_LONG).show();
+                                    }
+                                } else {
+                                    Toast.makeText(RecordDetailActivity.this,
+                                            "还有必填项没有填写！"
+                                            ,Toast.LENGTH_LONG).show();
+                                }
+
+                            } else {
+                                Toast.makeText(RecordDetailActivity.this,
+                                        "还有必填项没有填写！"
+                                        ,Toast.LENGTH_LONG).show();
+                            }
+                        }else {
+                            Toast.makeText(RecordDetailActivity.this,
+                                    "还有必填项没有填写！"
+                                    ,Toast.LENGTH_LONG).show();
+                        }
+                    }else {
+                        Toast.makeText(RecordDetailActivity.this,
+                                "还有必填项没有填写！"
+                                ,Toast.LENGTH_LONG).show();
+                    }
+
+                }
+            });
+        } else{//当是线面的时候，只是保存当前一个点的信息
+            save_point_details.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkAndFocus(scene1)){
+                        if (checkAndFocus(scene2)){
+                            if (checkAndFocus(facilityType)){
+                                if (checkAndFocus (county)){
+                                    if (checkAndFocus(street)){
+                                        if(checkAndFocus(community)){
+                                            if (checkAndFocus(facilityAddress)){
+                                                if (imageView[0].getDrawable() != null){
+                                                    Coordinate coordinate =new Coordinate(
+                                                            mLongitude,mLatitude);
+                                                    PointData pointData = new PointData(
+                                                            scene1.getText().toString().trim(),
+                                                            scene2.getText().toString().trim(),
+                                                            facilityType.getText().toString().trim(),
+                                                            county.getText().toString().trim(),
+                                                            street.getText().toString().trim(),
+                                                            community.getText().toString().trim(),
+                                                            facilityAddress.getText().toString().
+                                                                    trim(),
+                                                            facilityQuality,
+                                                            imagePaths,
+                                                            coordinate,
+                                                            more_information.getText().toString().
+                                                                    trim()
+                                                    );
+
+                                                    pointDataList.add(pointData);
+                                                    //清除输入框内容
+
+                                                    Toast.makeText(RecordDetailActivity.this,
+                                                            "保存成功",
+                                                            Toast.LENGTH_SHORT).show();
+
+                                                }else{
+                                                    Toast.makeText(RecordDetailActivity.this,
+                                                            "请拍摄现场照片,最多拍摄三张。",
+                                                            Toast.LENGTH_SHORT).show();
+                                                }
+                                            } else {
+                                                Toast.makeText(RecordDetailActivity.this,
+                                                        "还有必填项没有填写！"
+                                                        ,Toast.LENGTH_LONG).show();
+                                            }
+                                        }else{
+                                            Toast.makeText(RecordDetailActivity.this,
+                                                    "还有必填项没有填写！"
+                                                    ,Toast.LENGTH_LONG).show();
+                                        }
+                                    }else {
+                                        Toast.makeText(RecordDetailActivity.this,
+                                                "还有必填项没有填写！"
+                                                ,Toast.LENGTH_LONG).show();
+                                    }
+                                } else {
+                                    Toast.makeText(RecordDetailActivity.this,
+                                            "还有必填项没有填写！"
+                                            ,Toast.LENGTH_LONG).show();
+                                }
+
+                            } else {
+                                Toast.makeText(RecordDetailActivity.this,
+                                        "还有必填项没有填写！"
+                                        ,Toast.LENGTH_LONG).show();
+                            }
+                        }else {
+                            Toast.makeText(RecordDetailActivity.this,
+                                    "还有必填项没有填写！"
+                                    ,Toast.LENGTH_LONG).show();
+                        }
+                    }else {
+                        Toast.makeText(RecordDetailActivity.this,
+                                "还有必填项没有填写！"
+                                ,Toast.LENGTH_LONG).show();
+                    }
+
+                }
+            });
+
+        }
+
+
+
+        //结束此次采集
+        save_all_points_details.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (checkAndFocus(scene1)){
@@ -246,10 +461,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                                     if(checkAndFocus(community)){
                                         if (checkAndFocus(facilityAddress)){
                                             if (imageView[0].getDrawable() != null){
-                                                PointDetails p = new PointDetails();
-                                                p.setId((int)System.currentTimeMillis());
-                                                p.setGeometrytype(geometryType);
-
                                                 Coordinate coordinate =new Coordinate(
                                                         mLongitude,mLatitude);
                                                 PointData pointData = new PointData(
@@ -259,21 +470,44 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                         county.getText().toString().trim(),
                                                         street.getText().toString().trim(),
                                                         community.getText().toString().trim(),
-                                                        facilityAddress.getText().toString().trim(),
+                                                        facilityAddress.getText().toString().
+                                                                trim(),
                                                         facilityQuality,
                                                         imagePaths,
                                                         coordinate,
-                                                        more_information.getText().toString().trim()
+                                                        more_information.getText().toString().
+                                                                trim()
                                                 );
 
-                                                all.add(pointData);
-                                                p.setData(all);
+                                                pointDataList.add(pointData);
+                                                p.setData(pointDataList);
+                                                newRecordDetail.add(p);
+                                                String unUploadDataJson = pref.getString
+                                                        ("UnUploadData","");
+
+                                                if(unUploadDataJson == null ||
+                                                        unUploadDataJson.equals("")){
+                                                    Log.d(TAG,"unUploadDataJson:"+gson.toJson(newRecordDetail));
+                                                    editor.putString("UnUploadData",
+                                                            gson.toJson(newRecordDetail));
+                                                    editor.apply();
+                                                } else{
+                                                    List<PointDetails> allUnUploadData =
+                                                            gson.fromJson(unUploadDataJson,
+                                                                    new TypeToken<List<PointDetails>>
+                                                                            (){}.getType());
+                                                    allUnUploadData.addAll(newRecordDetail);
+                                                    Log.d(TAG,"unUploadDataJson:"+gson.toJson(allUnUploadData));
+                                                    editor.putString("UnUploadData",
+                                                            gson.toJson(allUnUploadData));
+                                                    editor.apply();
+                                                }
+
                                                 Toast.makeText(RecordDetailActivity.this,
                                                         "保存成功",
                                                         Toast.LENGTH_SHORT).show();
-                                                Log.d("llll",pointData.toString());
 
-                                                
+                                                //考虑上传及跳转
 
                                                 /*Intent intent = new Intent(
                                                         RecordDetailActivity.this,
@@ -286,32 +520,39 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                         Toast.LENGTH_SHORT).show();
                                             }
                                         } else {
-                                            Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                            Toast.makeText(RecordDetailActivity.this,
+                                                    "还有必填项没有填写！"
                                                     ,Toast.LENGTH_LONG).show();
                                         }
                                     }else{
-                                        Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                        Toast.makeText(RecordDetailActivity.this,
+                                                "还有必填项没有填写！"
                                                 ,Toast.LENGTH_LONG).show();
                                     }
                                 }else {
-                                    Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                    Toast.makeText(RecordDetailActivity.this,
+                                            "还有必填项没有填写！"
                                             ,Toast.LENGTH_LONG).show();
                                 }
                             } else {
-                                Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                                Toast.makeText(RecordDetailActivity.this,
+                                        "还有必填项没有填写！"
                                         ,Toast.LENGTH_LONG).show();
                             }
 
                         } else {
-                            Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                            Toast.makeText(RecordDetailActivity.this,
+                                    "还有必填项没有填写！"
                                     ,Toast.LENGTH_LONG).show();
                         }
                     }else {
-                        Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                        Toast.makeText(RecordDetailActivity.this,
+                                "还有必填项没有填写！"
                                 ,Toast.LENGTH_LONG).show();
                     }
                 }else {
-                    Toast.makeText(RecordDetailActivity.this,"还有必填项没有填写！"
+                    Toast.makeText(RecordDetailActivity.this,
+                            "还有必填项没有填写！"
                             ,Toast.LENGTH_LONG).show();
                 }
 
@@ -338,6 +579,56 @@ public class RecordDetailActivity extends AppCompatActivity {
         }else{
             checkPermissionACCESS_FINE_LOCATION(this);
         }
+    }
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        /*if(!pointDataList.isEmpty()){
+            p.setData(pointDataList);
+            newRecordDetail.add(p);
+            String unUploadDataJson = pref.getString("UnUploadData","");
+            if(unUploadDataJson == null ||
+                    unUploadDataJson.equals("")){
+                Log.d(TAG,"unUploadDataJson:"+gson.toJson(newRecordDetail));
+                editor.putString("UnUploadData",
+                        gson.toJson(newRecordDetail));
+                editor.apply();
+            } else{
+                List<PointDetails> allUnUploadData =
+                        gson.fromJson(unUploadDataJson,
+                                new TypeToken<List<PointDetails>>(){}.getType());
+                allUnUploadData.addAll(newRecordDetail);
+                Log.d(TAG,"unUploadDataJson:"+gson.toJson(allUnUploadData));
+                editor.putString("UnUploadData",
+                        gson.toJson(allUnUploadData));
+                editor.apply();
+            }
+        }*/
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode,KeyEvent event){
+        if (keyCode==KeyEvent.KEYCODE_BACK) {
+            //back key Constant Value: 4 (0x00000004)
+            //创建退出对话框
+            AlertDialog.Builder isExit=new AlertDialog.Builder(this);
+            //设置对话框标题
+            isExit.setTitle("消息提醒");
+            //设置对话框消息
+            isExit.setMessage("确定要退出吗");
+            // 添加选择按钮并注册监听
+            isExit.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    RecordDetailActivity.this.finish();
+                }
+            });
+            isExit.setNegativeButton("取消", null);
+            //对话框显示
+            isExit.show();
+        }
+        return false;
     }
 
     public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
