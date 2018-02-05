@@ -171,7 +171,6 @@ public class RecordDetailActivity extends AppCompatActivity {
         });
 
 
-
         dealPhoto.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -273,6 +272,9 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                         "保存成功",
                                                         Toast.LENGTH_SHORT).show();
                                                 Log.d("llll",pointData.toString());
+
+                                                
+
                                                 /*Intent intent = new Intent(
                                                         RecordDetailActivity.this,
                                                         RecordDetailActivity.class);
