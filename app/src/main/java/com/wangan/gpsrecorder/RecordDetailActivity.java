@@ -293,7 +293,8 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                             ("UnUploadData","");
                                                     if(unUploadDataJson == null ||
                                                             unUploadDataJson.equals("")){
-                                                        Log.d(TAG,"unUploadDataJson:"+gson.toJson(newRecordDetail));
+                                                        Log.d(TAG,"unUploadDataJson:"+
+                                                                gson.toJson(newRecordDetail));
                                                         editor.putString("UnUploadData",
                                                                 gson.toJson(newRecordDetail));
                                                         editor.apply();
@@ -303,16 +304,35 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                                         new TypeToken<List<PointDetails>>
                                                                                 (){}.getType());
                                                         allUnUploadData.addAll(newRecordDetail);
-                                                        Log.d(TAG,"unUploadDataJson:"+gson.toJson(allUnUploadData));
+                                                        Log.d(TAG,"unUploadDataJson:"+
+                                                                gson.toJson(allUnUploadData));
                                                         editor.putString("UnUploadData",
                                                                 gson.toJson(allUnUploadData));
                                                         editor.apply();
                                                     }
-
-                                                    Toast.makeText(RecordDetailActivity.this,
-                                                            "保存成功",
-                                                            Toast.LENGTH_SHORT).show();
-                                                    //保存完，考虑上传
+                                                    //创建退出对话框
+                                                    AlertDialog.Builder isExit=new AlertDialog.
+                                                            Builder(RecordDetailActivity.this);
+                                                    //设置对话框消息
+                                                    isExit.setMessage("保存成功,是否上传");
+                                                    // 添加选择按钮并注册监听
+                                                    isExit.setPositiveButton("上传",
+                                                            new DialogInterface.OnClickListener() {
+                                                        @Override
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                            //TODO  上传模块
+                                                            RecordDetailActivity.this.finish();
+                                                        }
+                                                    });
+                                                    isExit.setNegativeButton("取消",
+                                                            new DialogInterface.OnClickListener() {
+                                                                @Override
+                                                                public void onClick(DialogInterface dialog, int which) {
+                                                                    RecordDetailActivity.this.finish();
+                                                                }
+                                                            });
+                                                    //对话框显示
+                                                    isExit.show();
 
                                                 /*Intent intent = new Intent(
                                                         RecordDetailActivity.this,
@@ -502,12 +522,29 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                             gson.toJson(allUnUploadData));
                                                     editor.apply();
                                                 }
-
-                                                Toast.makeText(RecordDetailActivity.this,
-                                                        "保存成功",
-                                                        Toast.LENGTH_SHORT).show();
-
-                                                //考虑上传及跳转
+                                                //创建退出对话框
+                                                AlertDialog.Builder isExit=new AlertDialog.
+                                                        Builder(RecordDetailActivity.this);
+                                                //设置对话框消息
+                                                isExit.setMessage("保存成功,是否上传");
+                                                // 添加选择按钮并注册监听
+                                                isExit.setPositiveButton("上传",
+                                                        new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                //TODO  上传模块
+                                                                RecordDetailActivity.this.finish();
+                                                            }
+                                                        });
+                                                isExit.setNegativeButton("取消",
+                                                        new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                RecordDetailActivity.this.finish();
+                                                            }
+                                                        });
+                                                //对话框显示
+                                                isExit.show();
 
                                                 /*Intent intent = new Intent(
                                                         RecordDetailActivity.this,
