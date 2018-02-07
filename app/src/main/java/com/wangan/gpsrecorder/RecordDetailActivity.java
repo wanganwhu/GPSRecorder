@@ -84,6 +84,7 @@ public class RecordDetailActivity extends AppCompatActivity {
     String geometryType = "";
 
     //必填的信息
+    private ArrayList<EditText> allEdit = new ArrayList<>(10);
     private EditText scene1,scene2,facilityType,county,street,community,facilityAddress;
     private RadioGroup quality_button_group;
     private RadioButton use_button,update_button,unusable_button;
@@ -122,6 +123,15 @@ public class RecordDetailActivity extends AppCompatActivity {
         county = findViewById(R.id.county);
         street = findViewById(R.id.street);
         community = findViewById(R.id.community);
+
+        allEdit.add(scene1);
+        allEdit.add(scene2);
+        allEdit.add(facilityType);
+        allEdit.add(facilityAddress);
+        allEdit.add(county);
+        allEdit.add(street);
+        allEdit.add(community);
+
         quality_button_group =findViewById(R.id.quality_button_group);
         use_button = findViewById(R.id.use_button);
         update_button =findViewById(R.id.update_button);
@@ -414,11 +424,13 @@ public class RecordDetailActivity extends AppCompatActivity {
                                                     );
 
                                                     pointDataList.add(pointData);
-                                                    //清除输入框内容
-
                                                     Toast.makeText(RecordDetailActivity.this,
-                                                            "保存成功",
+                                                            "保存成功,请输入下一个设施点信息",
                                                             Toast.LENGTH_SHORT).show();
+                                                    //清除输入框内容
+                                                    clearInput(allEdit);
+                                                    //清除图片
+                                                    clearInput(imageView);
 
                                                 }else{
                                                     Toast.makeText(RecordDetailActivity.this,
@@ -1020,6 +1032,27 @@ public class RecordDetailActivity extends AppCompatActivity {
         } else {
             return true;
         }
+    }
+
+    //清除输入框文字
+    public void clearInput(List<EditText> list){
+        if(list ==null || list.size() == 0){
+            return;
+        }
+        for(EditText editText:list){
+            editText.setText("");
+        }
+    }
+
+    //清除图片
+    public void clearInput(ImageView[] imageView){
+        if(imageView ==null || imageView.length == 0){
+            return;
+        }
+        for(ImageView image:imageView){
+            image.setImageDrawable(null);
+        }
+        imageViewIndex = 2;//图片位置归零
     }
 
     public  class MyOverlay extends Overlay {
