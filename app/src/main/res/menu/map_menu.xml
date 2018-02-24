@@ -9,9 +9,5 @@
         android:id="@+id/manage_facility"
         android:icon="@mipmap/dress1"
         android:title="@string/manage_facility"/>
-    <item
-        android:id="@+id/study_data"
-        android:icon="@mipmap/file"
-        android:title="@string/study_data"/>
 
 </menu>

@@ -8,8 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
+
 
 public class LocalFacilityManageActivity extends AppCompatActivity {
     Button handleLocalFacility,addLocalFacility;
@@ -44,8 +43,6 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
                 builder.setItems(strArray, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        /*Toast.makeText(LocalFacilityManageActivity.this,
-                                strArray[which],Toast.LENGTH_SHORT).show();*/
                         Intent intent = new Intent(LocalFacilityManageActivity.this,
                                 RecordDetailActivity.class);
                         intent.putExtra("geometryType",strArray2[which]);
@@ -58,5 +55,7 @@ public class LocalFacilityManageActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
 }

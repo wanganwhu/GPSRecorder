@@ -9,18 +9,18 @@ import java.util.List;
 
 public class PointData {
 
-    private String scene1;
-    private String scene2;
-    private String facilitytpye;
-    private String county;
-    private String street;
-    private String community;
+    private String scene1 = "";
+    private String scene2 = "";
+    private String facilitytpye = "";
+    private String county = "";
+    private String street = "";
+    private String community = "";
 
-    private String facilityaddress;
-    private int quality;//该设施是否可以，1为可用，-1为不可用，0为改建中
-    private String[] imagePaths;
-    private Coordinate coordinate;
-    private String otherInformation;
+    private String facilityaddress = "";
+    private int quality = 1;//该设施是否可以，1为可用，-1为不可用，0为改建中
+    private String[] imagePaths = {"","",""};
+    private Coordinate coordinate = new Coordinate(0,0);
+    private String otherInformation = "";
 
     public PointData(String scene1, String scene2, String facilitytpye, String county,
                      String street, String community, String facilityaddress, int quality,
@@ -36,6 +36,10 @@ public class PointData {
         this.imagePaths = imagePaths;
         this.coordinate = coordinate;
         this.otherInformation = otherInformation;
+    }
+
+    public PointData(){
+
     }
 
 

@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.wangan.gpsrecorder.RecordDetailActivity">
+
+
+
+        <LinearLayout
+
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:textColor="#FF0000"
+                android:text="*具体场景" />
+
+            <EditText
+                android:id="@+id/scene1"
+                android:layout_width="0dp"
+                android:layout_weight="5"
+                android:layout_height="match_parent"
+                android:hint=""/>
+
+            <EditText
+                android:id="@+id/scene2"
+                android:layout_width="0dp"
+                android:layout_weight="5"
+                android:layout_height="match_parent"
+                android:hint=""/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="3"
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:text="*设施类型"
+                android:textColor="#FF0000" />
+
+            <EditText
+                android:id="@+id/facility_type"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="10"
+                android:hint="" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:textColor="#FF0000"
+                android:text="*所属社区" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="45dp">
+
+                <EditText
+                    android:id="@+id/county"
+                    android:layout_width="0dp"
+                    android:layout_weight="5"
+                    android:layout_height="match_parent"
+                    android:hint="县/区"/>
+
+                <EditText
+                    android:id="@+id/street"
+                    android:layout_width="0dp"
+                    android:layout_weight="5"
+                    android:layout_height="match_parent"
+                    android:hint="街道"/>
+
+                <EditText
+                    android:id="@+id/community"
+                    android:layout_width="0dp"
+                    android:layout_weight="5"
+                    android:layout_height="match_parent"
+                    android:hint="社区"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:textColor="#FF0000"
+                android:text="*设施位置" />
+
+            <EditText
+                android:id="@+id/facility_address"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:textColor="#FF0000"
+                android:text="*是否合格" />
+
+
+
+            <RadioGroup android:id="@+id/quality_button_group"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/use_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="可使用" />
+
+                <RadioButton
+                    android:id="@+id/update_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="改建中" />
+
+                <RadioButton
+                    android:id="@+id/unusable_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="不可用" />
+            </RadioGroup>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="10dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:textColor="#FF0000"
+                android:text="*现场照片" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="45dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/deal_photo"
+                    android:layout_width="43dp"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/plus" />
+
+
+                <ImageView
+                    android:id="@+id/image_1"
+                    android:layout_width="0dp"
+                    android:layout_weight="3"
+                    android:layout_height="match_parent"
+
+                    />
+                <ImageView
+                    android:id="@+id/image_2"
+                    android:layout_width="0dp"
+                    android:layout_weight="3"
+                    android:layout_height="match_parent"
+                    />
+                <ImageView
+                    android:id="@+id/image_3"
+                    android:layout_width="0dp"
+                    android:layout_weight="3"
+                    android:layout_height="match_parent"
+                    />
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <TextView
+                android:paddingLeft="15dp"
+                android:paddingTop="10dp"
+                android:layout_width="0dp"
+                android:layout_weight="3"
+                android:layout_height="match_parent"
+                android:text="其他信息" />
+
+            <EditText
+                android:id="@+id/more_information"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="match_parent" />
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <com.tianditu.android.maps.MapView
+                android:id="@+id/detail_map_view"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"/>
+
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp">
+
+            <Button
+                android:id="@+id/save_point_details"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="10"
+                android:text="保存" />
+
+            <Button
+                android:id="@+id/save_all_points_details"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="10"
+                android:text="结束当前采集" />
+
+            <Button
+                android:id="@+id/cancel_point_details"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="match_parent"
+                android:text="取消"/>
+        </LinearLayout>
+
+
+
+
+
+</LinearLayout>

@@ -69,12 +69,7 @@ public class MapActivity extends Activity implements View.OnClickListener{
                         startActivity(intent);
                         return true;
 
-                    case "    设施点管理":
-                        //Toast.makeText(MapActivity.this,item.getTitle().toString(),Toast.LENGTH_SHORT).show();
-                        drawerLayout.closeDrawer(navigationView);
-                        return true;
-
-                    case "    学习资料":
+                    case "设施点管理":
                         //Toast.makeText(MapActivity.this,item.getTitle().toString(),Toast.LENGTH_SHORT).show();
                         drawerLayout.closeDrawer(navigationView);
                         return true;
@@ -311,8 +306,8 @@ public class MapActivity extends Activity implements View.OnClickListener{
 
         @Override
         public boolean onLongPress(GeoPoint p, MapView mapView) {
-            //mTvTips.setText("onLongPress:" + p.getLatitudeE6() + ","
-            //        + p.getLongitudeE6());
+            //mTvTips.setText("onLongPress:" + pointDetails.getLatitudeE6() + ","
+            //        + pointDetails.getLongitudeE6());
 
             return super.onLongPress(p, mapView);
         }
