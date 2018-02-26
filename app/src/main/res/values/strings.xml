@@ -12,6 +12,7 @@
     <string name="error_invalid_email">Email格式有误。</string>
     <string name="error_invalid_password">密码太短请重新输入。</string>
     <string name="error_incorrect_password">密码错误。</string>
+    <string name="error_confirm_required">两次密码输入不一致。</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">需要读取联系人权限来联想输入账号。</string>
     <string name="bad_network_condition">网络故障请重试</string>

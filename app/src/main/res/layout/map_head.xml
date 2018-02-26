@@ -5,12 +5,14 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:background="@color/blue_500">
+
     <ImageView
         android:id="@+id/person"
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_marginTop="42dp"
-        android:src="@mipmap/lufei"/>
+        android:src="@mipmap/default_user"/>
+
 
     <TextView
         android:id="@+id/user_name"

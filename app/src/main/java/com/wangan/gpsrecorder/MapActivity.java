@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tianditu.android.maps.GeoPoint;
@@ -54,7 +55,9 @@ public class MapActivity extends Activity implements View.OnClickListener{
         drawerLayout = findViewById(R.id.activity_na);
         navigationView = findViewById(R.id.nav);
         menu= findViewById(R.id.main_menu);
-        View headerView = navigationView.getHeaderView(0);
+        View headerView = navigationView.inflateHeaderView(R.layout.map_head);
+        TextView userNameView = headerView.findViewById(R.id.user_name);
+
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动，只通过点击按钮来滑动
         menu.setOnClickListener(this);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -65,7 +68,8 @@ public class MapActivity extends Activity implements View.OnClickListener{
                     case "设施点采集":
                         //Toast.makeText(MapActivity.this,item.getTitle().toString(),Toast.LENGTH_SHORT).show();
                         drawerLayout.closeDrawer(navigationView);
-                        Intent intent = new Intent(MapActivity.this,LocalFacilityManageActivity.class);
+                        Intent intent = new Intent(MapActivity.this,
+                                LocalFacilityManageActivity.class);
                         startActivity(intent);
                         return true;
 
@@ -81,6 +85,9 @@ public class MapActivity extends Activity implements View.OnClickListener{
                 return true;
             }
         });
+
+        String userName = getIntent().getStringExtra("username");
+        userNameView.setText("当前登录用户：" + userName);
 
         //设置启用内置的缩放控件
         mMapView.setBuiltInZoomControls(true);
