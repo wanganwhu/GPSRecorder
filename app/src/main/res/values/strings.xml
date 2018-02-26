@@ -4,16 +4,18 @@
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
-    <string name="prompt_password">Password (optional)</string>
-    <string name="action_sign_in">登录或注册</string>
-    <string name="action_sign_in_short">Sign in</string>
-    <string name="error_invalid_email">This email address is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
-    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="prompt_password">密码</string>
+    <string name="confirm_prompt_password">请再次输入</string>
+    <string name="action_sign_in">登录</string>
+    <string name="action_register">注册</string>
+    <string name="action_sign_in_short">登录</string>
+    <string name="error_invalid_email">Email格式有误。</string>
+    <string name="error_invalid_password">密码太短请重新输入。</string>
+    <string name="error_incorrect_password">密码错误。</string>
     <string name="error_field_required">This field is required</string>
-    <string name="permission_rationale">"Contacts permissions are needed for providing email
-        completions."
-    </string>
+    <string name="permission_rationale">需要读取联系人权限来联想输入账号。</string>
+    <string name="bad_network_condition">网络故障请重试</string>
+
     <string name="add__facility">    设施点采集</string>
     <string name="manage_facility">    设施点管理</string>
     <string name="study_data">    学习资料</string>

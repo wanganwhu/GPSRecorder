@@ -14,10 +14,10 @@ import okhttp3.Response;
 
 public class OKHttpUtils {
     public static String url = "";
-    OkHttpClient client = new OkHttpClient();
+    static OkHttpClient client = new OkHttpClient();
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    public String run(String url) throws IOException {
+    public static String run(String url) throws IOException {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -26,7 +26,7 @@ public class OKHttpUtils {
         return response.body().string();
     }
 
-    String post(String url, String json) throws IOException {
+    public  static String post(String url, String json) throws IOException {
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
                 .url(url)

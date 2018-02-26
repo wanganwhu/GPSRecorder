@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -27,6 +26,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -38,6 +38,21 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.wangan.gpsrecorder.model.PointDetails;
+import com.wangan.gpsrecorder.util.OKHttpUtils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +75,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final String[] DUMMY_CREDENTIALS = new String[]{
             "foo@example.com:hello", "bar@example.com:world"
     };
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -96,6 +112,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public void onClick(View view) {
                 attemptLogin();
+            }
+        });
+
+        Button mRegisterButton = findViewById(R.id.email_register_button);
+        mRegisterButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this,RegisterActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -406,7 +431,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
+    public class UserLoginTask extends AsyncTask<Void, Void, String> {
 
         private final String mEmail;
         private final String mPassword;
@@ -417,34 +442,34 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
 
         @Override
-        protected Boolean doInBackground(Void... params) {
+        protected String doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
+            String ans = loginByPost(mEmail,mPassword);
             // TODO: register the new account here.
-            return true;
+            return ans;
         }
 
         @Override
-        protected void onPostExecute(final Boolean success) {
+        protected void onPostExecute(final String success) {
             mAuthTask = null;
             showProgress(false);
+            if(success == null){
+                mPasswordView.setError(getString(R.string.bad_network_condition));
+                mPasswordView.requestFocus();
+                return;
+            }
 
-            if (success) {
+            JSONObject jsonObject = null;
+            int s = 0;
+            try{
+                jsonObject =new JSONObject("{\"success\" : 1, \"result\" : {\"usr_id\" : 1, \"uid\" : \"f1466594-1af1-11e8-859e-00163e104758\", \"isAdmin\" : 0, \"tel\" : \"123456\", \"default_region\" : 1}}");
+                s = jsonObject.getInt("success");
+            } catch (JSONException e){
+                e.printStackTrace();
+            }
+
+
+            if (s == 1) {
                 //finish();
                 Intent intent = new Intent(LoginActivity.this, MapActivity.class);
                 startActivity(intent);
@@ -460,5 +485,72 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
         }
     }
+
+    /** * post的方式请求
+     *@param username 用户名
+     *@param password 密码
+     *@return 返回null 登录异常
+     */
+    public static String loginByPost(String username,String password){
+        String path = "http://47.93.237.6:8080//lidar/getData.jsp";
+        try {
+            URL url = new URL(path);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(5000);
+            connection.setRequestMethod("POST");
+
+            //数据准备
+            String request = "fname=getuserinfo&fparam={\"email\":\"" +
+                    username + "\",\"password\":\""
+                    + password + "\"}";
+            //至少要设置的两个请求头
+            connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+
+            //post的方式提交实际上是流的方式提交给服务器
+            connection.setDoOutput(true);
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(request.getBytes());
+
+            //获得结果码
+            int responseCode = connection.getResponseCode();
+            if(responseCode ==200){
+                //请求成功
+                InputStream is = connection.getInputStream();
+                return convertStreamToString(is);
+            }else {
+                //请求失败
+                return null;
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "/n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
+
 }
 

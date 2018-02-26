@@ -47,9 +47,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MapActivity"></activity>
+        <activity android:name=".MapActivity" />
         <activity android:name=".LocalFacilityManageActivity" />
-        <activity android:name=".HandleLocalFacilityActivity"></activity>
+        <activity android:name=".HandleLocalFacilityActivity" />
+        <activity android:name=".RegisterActivity"></activity>
     </application>
 
 </manifest>
