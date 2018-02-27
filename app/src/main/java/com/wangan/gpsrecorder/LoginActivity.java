@@ -443,10 +443,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected String doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-            String ans = loginByPost(mEmail,mPassword);
-            // TODO: register the new account here.
-            return ans;
+            return loginByPost(mEmail,mPassword,"getuserinfo");
         }
 
         @Override
@@ -458,11 +455,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 mPasswordView.requestFocus();
                 return;
             }
+            String temp = success.replace("/n","");
 
             JSONObject jsonObject = null;
             int s = 0;
             try{
-                jsonObject =new JSONObject("{\"success\" : 1, \"result\" : {\"usr_id\" : 1, \"uid\" : \"f1466594-1af1-11e8-859e-00163e104758\", \"isAdmin\" : 0, \"tel\" : \"123456\", \"default_region\" : 1}}");
+                jsonObject =new JSONObject(temp.trim());
                 s = jsonObject.getInt("success");
             } catch (JSONException e){
                 e.printStackTrace();
@@ -472,6 +470,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             if (s == 1) {
                 //finish();
                 Intent intent = new Intent(LoginActivity.this, MapActivity.class);
+                intent.putExtra("username",mEmail);
+                intent.putExtra("password",mPassword);
                 startActivity(intent);
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
@@ -491,7 +491,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      *@param password 密码
      *@return 返回null 登录异常
      */
-    public static String loginByPost(String username,String password){
+    public static String loginByPost(String username,String password,String requestType){
         String path = "http://47.93.237.6:8080//lidar/getData.jsp";
         try {
             URL url = new URL(path);
@@ -500,7 +500,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             connection.setRequestMethod("POST");
 
             //数据准备
-            String request = "fname=getuserinfo&fparam={\"email\":\"" +
+            String request = "fname=" +requestType+
+                    "&fparam={\"email\":\"" +
                     username + "\",\"password\":\""
                     + password + "\"}";
             //至少要设置的两个请求头

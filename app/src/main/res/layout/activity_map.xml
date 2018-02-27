@@ -52,7 +52,7 @@ android:layout_height="match_parent"
             android:gravity="center"/>
     </LinearLayout>
 
-    <android.support.design.widget.NavigationView
+    <!--<android.support.design.widget.NavigationView
         android:id="@+id/nav"
         android:layout_gravity="left"
         android:layout_width="wrap_content"
@@ -60,8 +60,15 @@ android:layout_height="match_parent"
         android:fitsSystemWindows="true"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         app:headerLayout="@layout/map_head"
+        app:menu="@menu/map_menu">-->
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav"
+        android:layout_gravity="left"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         app:menu="@menu/map_menu">
-
     </android.support.design.widget.NavigationView>
 
 </android.support.v4.widget.DrawerLayout>

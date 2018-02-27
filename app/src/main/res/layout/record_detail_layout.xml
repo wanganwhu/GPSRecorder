@@ -25,16 +25,16 @@
             <EditText
                 android:id="@+id/scene1"
                 android:layout_width="0dp"
-                android:layout_weight="5"
                 android:layout_height="match_parent"
-                android:hint=""/>
+                android:layout_weight="5"
+                android:hint="城市道路" />
 
             <EditText
                 android:id="@+id/scene2"
                 android:layout_width="0dp"
-                android:layout_weight="5"
                 android:layout_height="match_parent"
-                android:hint=""/>
+                android:layout_weight="5"
+                android:hint="人行道" />
 
         </LinearLayout>
 
@@ -56,7 +56,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="10"
-                android:hint="" />
+                android:hint="缘石坡道" />
 
         </LinearLayout>
 
