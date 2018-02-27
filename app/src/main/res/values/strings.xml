@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GPSRecorder</string>
+    <string name="app_name">设施信息采集</string>
     <string name="title_activity_login">GPSRecorder</string>
 
     <!-- Strings related to login -->
