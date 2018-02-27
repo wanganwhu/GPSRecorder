@@ -15,6 +15,7 @@ import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -24,13 +25,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.wangan.gpsrecorder.util.OKHttpUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.wangan.gpsrecorder.LoginActivity.loginByPost;
+import static com.wangan.gpsrecorder.util.OKHttpUtils.url;
 
 public class RegisterActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     /**
@@ -275,7 +279,18 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
 
         @Override
         protected String doInBackground(Void... params) {
-            return loginByPost(mEmail,mPassword,"registeruserinfo");
+            String request = "fname=" +"registeruserinfo"+
+                    "&fparam={\"email\":\"" +
+                    mEmail + "\",\"password\":\""
+                    + mPassword + "\"}";
+            String ans = null;
+            try{
+                ans = OKHttpUtils.post(url,request);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            Log.d("lala","ans:"+ans);
+            return ans;
         }
 
         @Override

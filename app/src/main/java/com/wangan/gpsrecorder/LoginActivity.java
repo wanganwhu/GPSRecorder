@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
+import static com.wangan.gpsrecorder.util.OKHttpUtils.url;
 
 /**
  * A login screen that offers login via email/password.
@@ -443,7 +444,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected String doInBackground(Void... params) {
-            return loginByPost(mEmail,mPassword,"getuserinfo");
+            String request = "fname=" +"getuserinfo"+
+                    "&fparam={\"email\":\"" +
+                    mEmail + "\",\"password\":\""
+                    + mPassword + "\"}";
+            String ans = null;
+            try{
+                ans = OKHttpUtils.post(url,request);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            Log.d("lala","ans:"+ans);
+            return ans;
+            //return loginByPost(mEmail,mPassword,"getuserinfo");
         }
 
         @Override
@@ -485,73 +498,5 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
         }
     }
-
-    /** * post的方式请求
-     *@param username 用户名
-     *@param password 密码
-     *@return 返回null 登录异常
-     */
-    public static String loginByPost(String username,String password,String requestType){
-        String path = "http://47.93.237.6:8080//lidar/getData.jsp";
-        try {
-            URL url = new URL(path);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(5000);
-            connection.setRequestMethod("POST");
-
-            //数据准备
-            String request = "fname=" +requestType+
-                    "&fparam={\"email\":\"" +
-                    username + "\",\"password\":\""
-                    + password + "\"}";
-            //至少要设置的两个请求头
-            connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
-
-            //post的方式提交实际上是流的方式提交给服务器
-            connection.setDoOutput(true);
-            OutputStream outputStream = connection.getOutputStream();
-            outputStream.write(request.getBytes());
-
-            //获得结果码
-            int responseCode = connection.getResponseCode();
-            if(responseCode ==200){
-                //请求成功
-                InputStream is = connection.getInputStream();
-                return convertStreamToString(is);
-            }else {
-                //请求失败
-                return null;
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static String convertStreamToString(InputStream is) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-        String line = null;
-        try {
-            while ((line = reader.readLine()) != null) {
-                sb.append(line + "/n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return sb.toString();
-    }
-
-
 }
 

@@ -1,6 +1,8 @@
 package com.wangan.gpsrecorder;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentUris;
@@ -117,6 +119,8 @@ public class RecordDetailActivity extends AppCompatActivity {
 
     private TabLayout tabLayout = null;
     private ViewPager vp_pager;
+
+    private View mProgressView;//上传时进度条
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,6 +130,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         vp_pager =  findViewById(R.id.tab_viewpager);
         addPointRecord = findViewById(R.id.add_point_record);
         inflater=getLayoutInflater();
+        mProgressView = findViewById(R.id.detail_upload_progress);
 
         sharedPreferences = RecordDetailActivity.this.getSharedPreferences("data",MODE_PRIVATE);
         editor = sharedPreferences.edit();
@@ -503,6 +508,14 @@ public class RecordDetailActivity extends AppCompatActivity {
             save_all_points_details.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+                    if (viewList.size() < 3 && geometryType.equals("polygon")){
+                        Toast.makeText(RecordDetailActivity.this,
+                                "至少输入三个设施点"
+                                ,Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
                     if(checkAllEdit(viewList.get(position))){//所有出入框都输入
                         pointData.setCoordinate(myOverlay.getGeoPoint());
                         pointData.setScene1(scene1.getText().toString().trim());
@@ -933,6 +946,32 @@ public class RecordDetailActivity extends AppCompatActivity {
             default:
                 super.onRequestPermissionsResult(requestCode, permissions,
                         grantResults);
+        }
+    }
+
+    /**
+     * Shows the progress UI and hides the login form.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+    private void showProgress(final boolean show) {
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
         }
     }
 
