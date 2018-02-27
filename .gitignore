@@ -7,3 +7,7 @@
 /build
 /captures
 .externalNativeBuild
+/gradle/4.1/fileHashes/fileHashes.bin
+/gradle/4.1/fileHashes/fileHashes.lock
+/gradle/4.1/taskHistory/fileSnapshots.bin
+/gradle/4.1/taskHistory/fileSnapshots.lock
