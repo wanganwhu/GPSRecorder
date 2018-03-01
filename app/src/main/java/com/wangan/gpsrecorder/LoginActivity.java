@@ -38,6 +38,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.mapapi.SDKInitializer;
 import com.wangan.gpsrecorder.model.PointDetails;
 import com.wangan.gpsrecorder.util.OKHttpUtils;
 

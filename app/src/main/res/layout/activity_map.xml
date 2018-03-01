@@ -45,11 +45,12 @@ android:layout_height="match_parent"
 
         </LinearLayout>
 
-        <com.tianditu.android.maps.MapView
+        <com.baidu.mapapi.map.MapView
             android:id="@+id/main_map_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"/>
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:clickable="true" />
+
     </LinearLayout>
 
     <!--<android.support.design.widget.NavigationView

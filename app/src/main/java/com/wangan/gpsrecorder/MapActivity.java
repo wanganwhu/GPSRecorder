@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.hardware.SensorEventListener;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -16,29 +17,74 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.os.Bundle;
-import android.util.Log;
+
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
+
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.tianditu.android.maps.GeoPoint;
-import com.tianditu.android.maps.MapController;
-import com.tianditu.android.maps.MapView;
-import com.tianditu.android.maps.MapViewRender;
-import com.tianditu.android.maps.MyLocationOverlay;
-import com.tianditu.android.maps.Overlay;
-import com.tianditu.android.maps.renderoption.DrawableOption;
 
 import javax.microedition.khronos.opengles.GL10;
+
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapPoi;
+import com.baidu.mapapi.map.MapStatus;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
+import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.MyLocationConfiguration;
+import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.model.LatLng;
 import com.readystatesoftware.systembartint.SystemBarTintManager;
 
-public class MapActivity extends Activity implements View.OnClickListener{
+public class MapActivity extends Activity implements View.OnClickListener,SensorEventListener {
+
+    // 定位相关
+    LocationClient mLocClient;
+    public MyLocationListener myListener = new MyLocationListener();
+
+    private SensorManager mSensorManager;
+    private Double lastX = 0.0;
+    private int mCurrentDirection = 0;
+    private double mCurrentLat = 0.0;
+    private double mCurrentLon = 0.0;
+    private float mCurrentAccracy;
+
+    private boolean isLoacte = false;
+
+    /**
+     * 当前地点击点
+     */
+    private LatLng currentPt;
+    BitmapDescriptor bdA = BitmapDescriptorFactory
+            .fromResource(R.drawable.icon_marka);
+
+    MapView mMapView;
+    BaiduMap mBaiduMap;
+
+    boolean isFirstLoc = true; // 是否首次定位
+    private MyLocationData locData;
+
+
     private DrawerLayout drawerLayout;
     private SystemBarTintManager tintManager;
     private NavigationView navigationView;
@@ -48,9 +94,40 @@ public class MapActivity extends Activity implements View.OnClickListener{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_map);
-        MapView mMapView =  findViewById(R.id.main_map_view);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);//获取传感器管理服务
+
+        // 定位初始化
+        mLocClient = new LocationClient(this);
+        mLocClient.registerLocationListener(myListener);
+        LocationClientOption option = new LocationClientOption();
+        option.setOpenGps(true); // 打开gps
+        option.setCoorType("bd09ll"); // 设置坐标类型
+        option.setScanSpan(1000);
+        mLocClient.setLocOption(option);
+        mLocClient.start();
+
+        // 地图初始化
+        mMapView = findViewById(R.id.main_map_view);
+        mBaiduMap = mMapView.getMap();
+        mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                currentPt = latLng;
+                updateMapState();
+            }
+
+            @Override
+            public boolean onMapPoiClick(MapPoi mapPoi) {
+                currentPt = mapPoi.getPosition();
+                updateMapState();
+                return false;
+            }
+        });
+        // 开启定位图层
+        mBaiduMap.setMyLocationEnabled(true);
+
+
         initWindow();
         drawerLayout = findViewById(R.id.activity_na);
         navigationView = findViewById(R.id.nav);
@@ -89,33 +166,36 @@ public class MapActivity extends Activity implements View.OnClickListener{
         String userName = getIntent().getStringExtra("username");
         userNameView.setText("当前登录用户：" + userName);
 
-        //设置启用内置的缩放控件
-        mMapView.setBuiltInZoomControls(true);
-        MyOverlay myOverlay = new MyOverlay();
+    }
 
-        //得到mMapView的控制权,可以用它控制和驱动平移和缩放
-        MapController mMapController = mMapView.getController();
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        double x = sensorEvent.values[SensorManager.DATA_X];
+        if (Math.abs(x - lastX) > 1.0) {
+            mCurrentDirection = (int) x;
+            locData = new MyLocationData.Builder()
+                    .accuracy(mCurrentAccracy)
+                    // 此处设置开发者获取到的方向信息，顺时针0-360
+                    .direction(mCurrentDirection).latitude(mCurrentLat)
+                    .longitude(mCurrentLon).build();
+            mBaiduMap.setMyLocationData(locData);
+        }
+        lastX = x;
 
-        MyLocationOverlay myLocation = new MyLocationOverlay(this, mMapView);
+    }
 
-        //myLocation.enableCompass();  //显示指南针
-        myLocation.enableMyLocation(); //显示我的位置
-
-
-        myOverlay.setGeoPoint(myLocation.getMyLocation());
-        myOverlay.onTap(myLocation.getMyLocation(),mMapView);
-
-        mMapView.addOverlay(myLocation);
-        mMapView.addOverlay(myOverlay);
-        mMapController.setCenter(myLocation.getMyLocation());
-        //设置地图zoom级别
-        mMapController.setZoom(15);
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
 
     }
 
     @Override
     protected  void onResume(){
+        mMapView.onResume();
         super.onResume();
+        //为系统的方向传感器注册监听器
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+                SensorManager.SENSOR_DELAY_UI);
         if (checkPermissionREAD_EXTERNAL_STORAGE(this)) {
         }else{
             checkPermissionREAD_EXTERNAL_STORAGE(this);
@@ -125,6 +205,31 @@ public class MapActivity extends Activity implements View.OnClickListener{
         }else{
             checkPermissionACCESS_FINE_LOCATION(this);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        mMapView.onPause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        //取消注册传感器监听
+        mSensorManager.unregisterListener(this);
+        super.onStop();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        // 退出时销毁定位
+        mLocClient.stop();
+        // 关闭定位图层
+        mBaiduMap.setMyLocationEnabled(false);
+        mMapView.onDestroy();
+        mMapView = null;
+        super.onDestroy();
     }
 
     public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
@@ -254,88 +359,60 @@ public class MapActivity extends Activity implements View.OnClickListener{
         }
     }
 
-
-
-
-    public  class MyOverlay extends Overlay {
-        private Drawable mDrawable;
-        private GeoPoint mGeoPoint;
-        private DrawableOption mOption;
-
-        public MyOverlay() {
-            mDrawable = MapActivity.this.getResources().getDrawable(R.drawable.poiresult);
-            mOption = new DrawableOption();
-            mOption.setAnchor(0.5f, 1.0f);
-        }
-
-        public void setGeoPoint(GeoPoint point) {
-            mGeoPoint = point;
-        }
+    /**
+     * 定位SDK监听函数
+     */
+    public class MyLocationListener implements BDLocationListener {
 
         @Override
-        public boolean onTap(GeoPoint point, MapView mapView) {
-            mGeoPoint = point;
-            //mEditTextLon.setText("" + point.getLongitudeE6());
-            //mEditTextLat.setText("" + point.getLatitudeE6());
-           // mCbShowView.setChecked(true);
-
-            return true;
-        }
-
-        @Override
-        public boolean onKeyUp(int keyCode, KeyEvent event, MapView mapView) {
-            return super.onKeyUp(keyCode, event, mapView);
-        }
-
-        @Override
-        public boolean onKeyDown(int keyCode, KeyEvent event, MapView mapView) {
-
-            return super.onKeyDown(keyCode, event, mapView);
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event, MapView mapView) {
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-
-                    break;
-                case MotionEvent.ACTION_MOVE:
-
-                    break;
-                case MotionEvent.ACTION_UP:
-
-                    break;
-                default:
-                    break;
-            }
-            return super.onTouchEvent(event, mapView);
-        }
-
-        @Override
-        public boolean onLongPress(GeoPoint p, MapView mapView) {
-            //mTvTips.setText("onLongPress:" + pointDetails.getLatitudeE6() + ","
-            //        + pointDetails.getLongitudeE6());
-
-            return super.onLongPress(p, mapView);
-        }
-
-        @Override
-        public boolean isVisible() {
-            return super.isVisible();
-        }
-
-        @Override
-        public void setVisible(boolean b) {
-            super.setVisible(b);
-        }
-
-        @Override
-        public void draw(GL10 gl, MapView mapView, boolean shadow) {
-            if (shadow)
+        public void onReceiveLocation(BDLocation location) {
+            // map view 销毁后不在处理新接收的位置
+            if (location == null || mMapView == null || isLoacte) {
                 return;
+            }
+            mCurrentLat = location.getLatitude();
+            mCurrentLon = location.getLongitude();
+            mCurrentAccracy = location.getRadius();
+            locData = new MyLocationData.Builder()
+                    .accuracy(location.getRadius())
+                    // 此处设置开发者获取到的方向信息，顺时针0-360
+                    .direction(mCurrentDirection).latitude(location.getLatitude())
+                    .longitude(location.getLongitude()).build();
+            mBaiduMap.setMyLocationData(locData);
+            if (isFirstLoc) {
+                isFirstLoc = false;
+                LatLng ll = new LatLng(location.getLatitude(),
+                        location.getLongitude());
+                MapStatus.Builder builder = new MapStatus.Builder();
+                builder.target(ll).zoom(15.0f);
+                mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+            }
 
-            MapViewRender render = mapView.getMapViewRender();
-            render.drawDrawable(gl, mOption, mDrawable, mGeoPoint);
+            currentPt =new LatLng(mCurrentLat,mCurrentLon);
+            isLoacte = true;
         }
+    }
+
+
+
+    /**
+     * 更新地图状态显示面板
+     */
+    private void updateMapState() {
+        String state = "";
+        if (currentPt == null) {
+        } else {
+            state = String.format(",当前经度： %f 当前纬度：%f",
+                    currentPt.longitude, currentPt.latitude);
+            MarkerOptions ooA = new MarkerOptions().position(currentPt).icon(bdA);
+            mBaiduMap.clear();
+            mBaiduMap.addOverlay(ooA);
+        }
+        state += "\n";
+        MapStatus ms = mBaiduMap.getMapStatus();
+        state += String.format(
+                "zoom=%.1f rotate=%d overlook=%d",
+                ms.zoom, (int) ms.rotate, (int) ms.overlook);
+        Toast.makeText(MapActivity.this,state,Toast.LENGTH_LONG).show();
     }
 }

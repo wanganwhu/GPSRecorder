@@ -10,6 +10,7 @@ import android.os.Build;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +55,8 @@ public class HandleLocalFacilityActivity extends AppCompatActivity {
         editor = sharedPreferences.edit();
         pref = getSharedPreferences("data",MODE_PRIVATE);
         String unUploadDataJson = pref.getString("UnUploadData","");
-        if(unUploadDataJson.equals("")){
+        Log.d("未上传列表","unUploadDataJson:"+unUploadDataJson);
+        if(unUploadDataJson.equals("") || unUploadDataJson.equals("[]")){
             Toast.makeText(this,"没有未上传的设施信息",Toast.LENGTH_LONG).show();
         } else {
             allUnUploadData = gson.fromJson(unUploadDataJson,
@@ -73,6 +75,7 @@ public class HandleLocalFacilityActivity extends AppCompatActivity {
                     intent.putExtra("unUploadData",gson.toJson(allUnUploadData.get(position)));
                     intent.putExtra("geometryType",allUnUploadData.get(position).getGeometrytype());
                     intent.putExtra("reload",1);
+                    intent.putExtra("listViewPosition",position);
                     startActivityForResult(intent,RELOAD);
                 }
             });
@@ -89,7 +92,6 @@ public class HandleLocalFacilityActivity extends AppCompatActivity {
 
     private void initPopWindow(View v , final int position) {
         View view = LayoutInflater.from(this).inflate(R.layout.item_popup, null, false);
-        Button btn_upload = view.findViewById(R.id.btn_upload);
         Button btn_delete = view.findViewById(R.id.btn_delete);
         //1.构造一个PopupWindow，参数依次是加载的View，宽高
         final PopupWindow popWindow = new PopupWindow(view,
@@ -103,25 +105,13 @@ public class HandleLocalFacilityActivity extends AppCompatActivity {
         popWindow.setTouchable(true);
         popWindow.setBackgroundDrawable(new ColorDrawable(0x00000000));    //要为popWindow设置一个背景才有效
 
-
         //设置popupWindow显示的位置，参数依次是参照View，x轴的偏移量，y轴的偏移量
-        popWindow.showAsDropDown(v, 700, -200);
+        popWindow.showAsDropDown(v, 700, -150);
 
-        //设置popupWindow里的按钮的事件
-        btn_upload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(HandleLocalFacilityActivity.this, "上传中。。。",
-                        Toast.LENGTH_SHORT).show();
-                //TODO
-                popWindow.dismiss();
-            }
-        });
         btn_delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                //TODO
                 AlertDialog.Builder adb=new AlertDialog.Builder(
                         HandleLocalFacilityActivity.this);
                 adb.setMessage("确定删除此条设施信息？");
@@ -145,16 +135,31 @@ public class HandleLocalFacilityActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d("HandleLocal","requestCode:" + requestCode);
         switch (requestCode) {
             case RELOAD:
-                if (resultCode == RESULT_OK) {
+                Log.d("HandleLocal","resultCode:" + resultCode);
+                if (resultCode == RESULT_OK) {//没有上传
                     String unUploadDataJson = pref.getString("UnUploadData","");
                     allUnUploadData = gson.fromJson(unUploadDataJson,
                             new TypeToken<List<PointDetails>>(){}.getType());
+
+                    Log.d("HandleLocal",allUnUploadData.toString());
+
                     adapter = new PointDetailsAdapter(
                             HandleLocalFacilityActivity.this, R.layout.facility_item,
                             allUnUploadData);
                     adapter.notifyDataSetChanged();
+                } else if(resultCode == RESULT_FIRST_USER) {//上传成功
+                    int listViewPosition = data.getIntExtra("listViewPosition",-1);
+                    if (listViewPosition != -1 && listViewPosition< allUnUploadData.size()){
+                        allUnUploadData.remove(listViewPosition);
+                        editor.putString("UnUploadData",
+                                gson.toJson(allUnUploadData));
+                        editor.apply();
+
+                        adapter.notifyDataSetChanged();
+                    }
                 }
                 break;
             default:

@@ -7,8 +7,8 @@ package com.wangan.gpsrecorder.model;
 
 public class Coordinate {
 
-    private int longitude;
-    private int latitude;
+    private double longitude;
+    private double latitude;
 
     @Override
     public String toString() {
@@ -16,24 +16,21 @@ public class Coordinate {
                 + ", \"latitude\":\"" + latitude + "\"}";
     }
 
-    public Coordinate(int longitude, int latitude) {
+    public Coordinate(double longitude, double latitude) {
         this.longitude = longitude;
         this.latitude = latitude;
     }
-
 
     public void setLongitude(int longitude) {
         this.longitude = longitude;
     }
-    public int getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
-
-
     public void setLatitude(int latitude) {
         this.latitude = latitude;
     }
-    public int getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 

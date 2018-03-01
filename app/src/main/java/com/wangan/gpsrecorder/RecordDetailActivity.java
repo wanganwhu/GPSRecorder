@@ -14,10 +14,14 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -32,11 +36,10 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.ArrayMap;
 import android.util.Log;
-import android.view.Display;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -44,35 +47,52 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapPoi;
+import com.baidu.mapapi.map.MapStatus;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
+import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.TextureMapView;
+import com.baidu.mapapi.model.LatLng;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.tianditu.android.maps.GeoPoint;
-import com.tianditu.android.maps.MapController;
-import com.tianditu.android.maps.MapView;
-import com.tianditu.android.maps.MapViewRender;
-import com.tianditu.android.maps.MyLocationOverlay;
-import com.tianditu.android.maps.Overlay;
-import com.tianditu.android.maps.renderoption.DrawableOption;
+
+
 import com.wangan.gpsrecorder.model.Coordinate;
 import com.wangan.gpsrecorder.model.PointData;
 import com.wangan.gpsrecorder.model.PointDetails;
 import com.wangan.gpsrecorder.util.LocationUtils;
+import com.wangan.gpsrecorder.util.OKHttpUtils;
+import com.wangan.gpsrecorder.util.ViewPagerCompat;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-
-import javax.microedition.khronos.opengles.GL10;
+import java.util.Map;
 
 import static android.graphics.BitmapFactory.decodeFile;
+import static com.wangan.gpsrecorder.util.OKHttpUtils.url;
 
 
 /**
@@ -84,6 +104,11 @@ public class RecordDetailActivity extends AppCompatActivity {
     public static final int TAKE_PHOTO = 1;
     public static final int CROP_PHOTO = 2;
     public static final int CHOOSE_PHOTO = 3;
+
+    /**
+     * Keep track of the login task to ensure we can cancel it if requested.
+     */
+    private RecordUploadTask mAuthTask = null;
 
     final Gson gson = new Gson();
     SharedPreferences sharedPreferences = null;
@@ -107,6 +132,20 @@ public class RecordDetailActivity extends AppCompatActivity {
     //添加点按钮
     ImageButton addPointRecord;
 
+    // 定位相关
+    LocationClient mLocClient;
+    public MyLocationListener myListener = new MyLocationListener();
+
+    private double mCurrentLat = 0.0;
+    private double mCurrentLon = 0.0;
+
+    HashMap<BaiduMap,Boolean> baiduMaps =new HashMap<>(5);
+    ArrayList<TextureMapView> textureMapViews = new ArrayList<>(5);
+
+    //点击地图标记的图标
+    BitmapDescriptor bdA = BitmapDescriptorFactory
+            .fromResource(R.drawable.poiresult);
+
 
     //图片路径
     ArrayList<String[]> imagePaths = new ArrayList<>();
@@ -118,7 +157,7 @@ public class RecordDetailActivity extends AppCompatActivity {
     LayoutInflater inflater = null;
 
     private TabLayout tabLayout = null;
-    private ViewPager vp_pager;
+    private ViewPagerCompat vp_pager;
 
     private View mProgressView;//上传时进度条
     @Override
@@ -126,6 +165,17 @@ public class RecordDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_record_detail);
+
+        // 定位初始化
+        mLocClient = new LocationClient(getApplicationContext());
+        mLocClient.registerLocationListener(myListener);
+        LocationClientOption option = new LocationClientOption();
+        option.setOpenGps(true); // 打开gps
+        option.setCoorType("bd09ll"); // 设置坐标类型
+        option.setScanSpan(1000);
+        mLocClient.setLocOption(option);
+        mLocClient.start();
+
         tabLayout =  findViewById(R.id.tab_layout);
         vp_pager =  findViewById(R.id.tab_viewpager);
         addPointRecord = findViewById(R.id.add_point_record);
@@ -136,7 +186,9 @@ public class RecordDetailActivity extends AppCompatActivity {
         editor = sharedPreferences.edit();
         pref = getSharedPreferences("data",MODE_PRIVATE);
 
-        geometryType = getIntent().getStringExtra("geometryType");
+        /*geometryType = getIntent().getStringExtra("geometryType")==null?""
+                :getIntent().getStringExtra("geometryType");*/
+
         isReload = getIntent().getIntExtra("reload",0);
         if(geometryType.equals("point")){
             addPointRecord.setVisibility(View.GONE);
@@ -165,7 +217,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                             null);
                     viewList.add(view1);
                     imageViewIndex.add(2);//增加一个图片下标
-                    imagePaths.add(new String[3]);
+                    imagePaths.add(pointDataList.get(i).getImage());
                 }
             }
         }
@@ -184,6 +236,9 @@ public class RecordDetailActivity extends AppCompatActivity {
         });
 
         initView();
+
+
+
     }
     private void initView() {
         tabLayout.setTabMode(TabLayout.MODE_SCROLLABLE);
@@ -260,36 +315,64 @@ public class RecordDetailActivity extends AppCompatActivity {
             save_all_points_details = viewList.get(position).findViewById(R.id.save_all_points_details);
             cancel_point_details = viewList.get(position).findViewById(R.id.cancel_point_details);
 
-            MapView mMapView =  viewList.get(position).findViewById(R.id.detail_map_view);
-
             if (geometryType.equals("point")) {
                 save_all_points_details.setVisibility(View.GONE);
             }
 
-            final MyOverlay myOverlay = new MyOverlay();
+            TextureMapView myMapView =  viewList.get(position).findViewById(R.id.detail_map_view);
+            textureMapViews.add(myMapView);//把所有的mapView收集起来，方便控制生命周期
+
+            final BaiduMap mBaiduMap = myMapView.getMap();
+
+
+            mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+                @Override
+                public void onMapClick(LatLng latLng) {
+                    Log.d("点击坐标","mCurrentLon:"+latLng.longitude+
+                            " mCurrentLat:"+latLng.latitude);
+
+                    pointData.setCoordinate(new Coordinate(latLng.longitude,
+                            latLng.latitude));
+                    updateMapState(mBaiduMap,latLng);
+                }
+
+                @Override
+                public boolean onMapPoiClick(MapPoi mapPoi) {
+                    pointData.setCoordinate(new Coordinate(mapPoi.getPosition().longitude,
+                            mapPoi.getPosition().latitude));
+                    updateMapState(mBaiduMap,mapPoi.getPosition());
+                    return false;
+                }
+            });
 
             if(null != pointDetails.getData() && pointDetails.getData().size()>=position+1
-                    && null != pointDetails.getData().get(position) ){
-                reloadData(pointDetails.getData().get(position),viewList.get(position),myOverlay);
+                    && null != pointDetails.getData().get(position) ){//重新加载数据到页面上
+                Log.d("lala",pointDetails.getData().get(position).toString());
+
+                reloadData(pointDetails.getData().get(position),viewList.get(position),mBaiduMap);
+
+                pointData.setCoordinate(pointDetails.getData().get(position).getCoordinate());
+                //pointData.setImage(pointDetails.getData().get(position).getImage());
+
+                Log.d("updateMapState","mCurrentLon:"+pointDetails.getData()
+                        .get(position).getCoordinate().getLatitude()+" mCurrentLat:"+pointDetails.getData()
+                        .get(position).getCoordinate().getLongitude());
+
+                updateMapState(mBaiduMap,new LatLng(
+                        pointDetails.getData().get(position).getCoordinate().getLatitude(),
+                        pointDetails.getData().get(position).getCoordinate().getLongitude()));//定位
+                baiduMaps.put(mBaiduMap,true);
             }else {
-                //地图相关
-                //设置启用内置的缩放控件
-                mMapView.setBuiltInZoomControls(true);
-
-                //得到mMapView的控制权,可以用它控制和驱动平移和缩放
-                MapController mMapController = mMapView.getController();
-                MyLocationOverlay myLocation = new MyLocationOverlay(RecordDetailActivity.this, mMapView);
-                //myLocation.enableCompass();  //显示指南针
-                myLocation.enableMyLocation(); //显示我的位置
-                myOverlay.setGeoPoint(myLocation.getMyLocation());
-                myOverlay.onTap(myLocation.getMyLocation(),mMapView);
-
-                mMapView.addOverlay(myLocation);
-                mMapView.addOverlay(myOverlay);
-                mMapController.setCenter(myLocation.getMyLocation());
-                //设置地图zoom级别
-                mMapController.setZoom(15);
+                baiduMaps.put(mBaiduMap,false);
                 quality_button_group.check(R.id.use_button);//默认选择第一个
+
+                Log.d("lala1","mCurrentLon:"+mCurrentLon+" mCurrentLat:"+mCurrentLat);
+
+                setUserMapCenter(new Coordinate(mCurrentLon,mCurrentLat),mBaiduMap);//设置地图中心点
+                updateMapState(mBaiduMap,new LatLng(mCurrentLat,mCurrentLon));//定位
+
+                //定位成功后写入pointData
+                pointData.setCoordinate(new Coordinate(mCurrentLon, mCurrentLat));
             }
 
             quality_button_group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -317,8 +400,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                     final String[] strArray = new String[]{"点我拍照","选择照片"};
                     AlertDialog.Builder builder = new
                             AlertDialog.Builder(RecordDetailActivity.this);//实例化builder
-                    //builder.setIcon(R.mipmap.ic_launcher);//设置图标
-                    //builder.setTitle("设施点类型");//设置标题
+
                     //设置列表
                     builder.setItems(strArray, new DialogInterface.OnClickListener() {
                         @Override
@@ -378,7 +460,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         if(checkAllEdit(viewList.get(position))){//所有出入框都输入
-                            pointData.setCoordinate(myOverlay.getGeoPoint());
                             pointData.setScene1(scene1.getText().toString().trim());
                             pointData.setScene2(scene2.getText().toString().trim());
                             pointData.setFacilitytpye(facilityType.getText().toString().trim());
@@ -394,40 +475,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                             pointDataList.set(position,pointData);
                             pointDetails.setData(pointDataList);
 
-                            String unUploadDataJson = pref.getString
-                                    ("UnUploadData","");
-                            if(unUploadDataJson.equals("")){
-                                List<PointDetails> newRecordDetail = new ArrayList<>();
-                                newRecordDetail.add(pointDetails);
-                                Log.d(TAG,"unUploadDataJson:"+
-                                        gson.toJson(newRecordDetail));
-                                editor.putString("UnUploadData",
-                                        gson.toJson(newRecordDetail));
-                                editor.apply();
-                            } else{
-                                List<PointDetails> allUnUploadData =
-                                        gson.fromJson(unUploadDataJson,
-                                                new TypeToken<List<PointDetails>>
-                                                        (){}.getType());
-                                if(isReload == 0){
-                                    allUnUploadData.add(pointDetails);
-                                }else{
-                                    for (int i = allUnUploadData.size()-1;i>=0;--i){
-                                        PointDetails tempPointDetails = allUnUploadData.get(i);
-                                        if (tempPointDetails.getId() == pointDetails.getId()){
-                                            allUnUploadData.remove(i);
-                                            break;
-                                        }
-                                    }
-                                    allUnUploadData.add(pointDetails);
-                                }
 
-                                Log.d(TAG,"unUploadDataJson:"+
-                                        gson.toJson(allUnUploadData));
-                                editor.putString("UnUploadData",
-                                        gson.toJson(allUnUploadData));
-                                editor.apply();
-                            }
                             //创建退出对话框
                             AlertDialog.Builder isExit=new AlertDialog.
                                     Builder(RecordDetailActivity.this);
@@ -439,14 +487,54 @@ public class RecordDetailActivity extends AppCompatActivity {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
                                             //TODO  上传模块
-                                            RecordDetailActivity.this.finish();
+                                            showProgress(true);
+                                            mAuthTask = new RecordUploadTask(gson.toJson(pointDetails));
+                                            mAuthTask.execute((Void) null);
+
                                         }
                                     });
                             isExit.setNegativeButton("取消",
                                     new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
+                                            String unUploadDataJson = pref.getString
+                                                    ("UnUploadData","");
+                                            if(unUploadDataJson.equals("")){
+                                                List<PointDetails> newRecordDetail = new ArrayList<>();
+                                                newRecordDetail.add(pointDetails);
+                                                Log.d(TAG,"unUploadDataJson:"+
+                                                        gson.toJson(newRecordDetail));
+                                                editor.putString("UnUploadData",
+                                                        gson.toJson(newRecordDetail));
+                                                editor.apply();
+                                            } else{
+                                                List<PointDetails> allUnUploadData =
+                                                        gson.fromJson(unUploadDataJson,
+                                                                new TypeToken<List<PointDetails>>
+                                                                        (){}.getType());
+                                                if(isReload == 0){
+                                                    allUnUploadData.add(pointDetails);
+                                                }else{
+                                                    for (int i = allUnUploadData.size()-1;i>=0;--i){
+                                                        PointDetails tempPointDetails = allUnUploadData.get(i);
+                                                        if (tempPointDetails.getId() == pointDetails.getId()){
+                                                            allUnUploadData.remove(i);
+                                                            break;
+                                                        }
+                                                    }
+                                                    allUnUploadData.add(pointDetails);
+                                                }
+
+                                                Log.d(TAG,"unUploadDataJson:"+
+                                                        gson.toJson(allUnUploadData));
+                                                editor.putString("UnUploadData",
+                                                        gson.toJson(allUnUploadData));
+                                                editor.apply();
+                                            }
+
+                                            RecordDetailActivity.this.setResult(RESULT_OK, new Intent());
                                             RecordDetailActivity.this.finish();
+
                                         }
                                     });
                             //对话框显示
@@ -463,7 +551,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         if(checkAllEdit(viewList.get(position))){//所有出入框都输入
-                            pointData.setCoordinate(myOverlay.getGeoPoint());
                             pointData.setScene1(scene1.getText().toString().trim());
                             pointData.setScene2(scene2.getText().toString().trim());
                             pointData.setFacilitytpye(facilityType.getText().toString().trim());
@@ -479,21 +566,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                             Toast.makeText(RecordDetailActivity.this,
                                     "保存成功,请输入下一个设施点信息",
                                     Toast.LENGTH_SHORT).show();
-
-                            //////////////////////////////////////////////
-                            //为了跳转到下一个view
-                            View view2 =  inflater.inflate(R.layout.record_detail_layout,
-                                    null);
-                            viewList.add(view2);
-
-                            imageViewIndex.add(2);//增加一个图片下标
-                            imagePaths.add(new String[3]);
-                            pointDataList.add(new PointData());
-
-                            morePagerAdapter.notifyDataSetChanged();
-                            vp_pager.setCurrentItem(position+1);
-                            /////////////////////////////////////////////
-
                         }else{
                             Toast.makeText(RecordDetailActivity.this,
                                     "还有必填项没有填写！"
@@ -517,7 +589,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                     }
 
                     if(checkAllEdit(viewList.get(position))){//所有出入框都输入
-                        pointData.setCoordinate(myOverlay.getGeoPoint());
                         pointData.setScene1(scene1.getText().toString().trim());
                         pointData.setScene2(scene2.getText().toString().trim());
                         pointData.setFacilitytpye(facilityType.getText().toString().trim());
@@ -533,45 +604,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                         pointDataList.set(position,pointData);
                         pointDetails.setData(pointDataList);
 
-                        String unUploadDataJson = pref.getString
-                                ("UnUploadData","");
-                        if(unUploadDataJson.equals("")){
-                            List<PointDetails> newRecordDetail = new ArrayList<>();
-                            newRecordDetail.add(pointDetails);
-                            Log.d(TAG,"unUploadDataJson:"+
-                                    gson.toJson(newRecordDetail));
-                            editor.putString("UnUploadData",
-                                    gson.toJson(newRecordDetail));
-                            editor.apply();
-                        } else{
-                            List<PointDetails> allUnUploadData =
-                                    gson.fromJson(unUploadDataJson,
-                                            new TypeToken<List<PointDetails>>
-                                                    (){}.getType());
-                            if(isReload == 0){
-                                allUnUploadData.add(pointDetails);
-                            }else{
-                                if(isReload == 0){
-                                    allUnUploadData.add(pointDetails);
-                                }else{
-                                    //TODO
-                                    for (int i = allUnUploadData.size()-1;i>=0;--i){
-                                        PointDetails tempPointDetails = allUnUploadData.get(i);
-                                        if (tempPointDetails.getId() == pointDetails.getId()){
-                                            allUnUploadData.remove(i);
-                                            break;
-                                        }
-                                    }
-                                    allUnUploadData.add(pointDetails);
-                                }
-                                allUnUploadData.add(pointDetails);
-                            }
-                            Log.d(TAG,"unUploadDataJson:"+
-                                    gson.toJson(allUnUploadData));
-                            editor.putString("UnUploadData",
-                                    gson.toJson(allUnUploadData));
-                            editor.apply();
-                        }
                         //创建退出对话框
                         AlertDialog.Builder isExit=new AlertDialog.
                                 Builder(RecordDetailActivity.this);
@@ -583,13 +615,50 @@ public class RecordDetailActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         //TODO  上传模块
-                                        RecordDetailActivity.this.finish();
+                                        showProgress(true);
+                                        mAuthTask = new RecordUploadTask(gson.toJson(pointDetails));
+                                        mAuthTask.execute((Void) null);
                                     }
                                 });
                         isExit.setNegativeButton("取消",
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
+                                        //存放在sharedPreference中
+                                        String unUploadDataJson = pref.getString
+                                                ("UnUploadData","");
+                                        //若手机内保存为空，则新建数组包装一下
+                                        if(unUploadDataJson.equals("")){
+                                            List<PointDetails> newRecordDetail = new ArrayList<>();
+                                            newRecordDetail.add(pointDetails);
+                                            editor.putString("UnUploadData",
+                                                    gson.toJson(newRecordDetail));
+                                            editor.apply();
+                                        } else{
+                                            List<PointDetails> allUnUploadData =
+                                                    gson.fromJson(unUploadDataJson,
+                                                            new TypeToken<List<PointDetails>>
+                                                                    (){}.getType());
+
+                                            if(isReload == 0){//若是新建则加入本地数组中
+                                                allUnUploadData.add(pointDetails);
+                                            }else{//是修改的，把数组中的删了再加入
+                                                for (int i = allUnUploadData.size()-1;i>=0;--i){
+                                                    PointDetails tempPointDetails =
+                                                            allUnUploadData.get(i);
+                                                    if (tempPointDetails.getId() ==
+                                                            pointDetails.getId()){
+                                                        allUnUploadData.remove(i);
+                                                        break;
+                                                    }
+                                                }
+                                                allUnUploadData.add(pointDetails);
+                                            }
+                                            editor.putString("UnUploadData",
+                                                    gson.toJson(allUnUploadData));
+                                            editor.apply();
+                                        }
+                                        RecordDetailActivity.this.setResult(RESULT_OK, new Intent());
                                         RecordDetailActivity.this.finish();
                                     }
                                 });
@@ -631,7 +700,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void reloadData(PointData pointData, final View view,MyOverlay myOverlay){
+    private void reloadData(PointData pointData, final View view,final BaiduMap mBaiduMap){
         EditText myScene1= view.findViewById(R.id.scene1);
         myScene1.setText(pointData.getScene1());
 
@@ -716,23 +785,11 @@ public class RecordDetailActivity extends AppCompatActivity {
                 getBigPicture(myImagePaths[2]);
             }});
 
-        MapView mMapView =  view.findViewById(R.id.detail_map_view);
-        //地图相关
-        //设置启用内置的缩放控件
-        mMapView.setBuiltInZoomControls(true);
-        //得到mMapView的控制权,可以用它控制和驱动平移和缩放
-        MapController mMapController = mMapView.getController();
+        setUserMapCenter(pointData.getCoordinate(),mBaiduMap);//设置地图中心点
 
-        GeoPoint location = new GeoPoint(pointData.getCoordinate().getLatitude(),
-                pointData.getCoordinate().getLongitude());
-        myOverlay.setGeoPoint(location);
-        myOverlay.onTap(location,mMapView);
-
-        mMapView.addOverlay(myOverlay);
-        mMapController.setCenter(location);
-        //设置地图zoom级别
-        mMapController.setZoom(15);
     }
+
+
 
 
     /*
@@ -785,6 +842,10 @@ public class RecordDetailActivity extends AppCompatActivity {
     @Override
     protected  void onResume(){
         super.onResume();
+        // activity 恢复时同时恢复地图控件
+        for(TextureMapView it:textureMapViews){
+            it.onResume();
+        }
         if (checkPermissionREAD_EXTERNAL_STORAGE(this)) {
         }else{
             checkPermissionREAD_EXTERNAL_STORAGE(this);
@@ -797,32 +858,14 @@ public class RecordDetailActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop(){
-        super.onStop();
-        /*if(!pointDataList.isEmpty()){
-            pointDetails.setData(pointDataList);
-            newRecordDetail.add(pointDetails);
-            String unUploadDataJson = pref.getString("UnUploadData","");
-            if(unUploadDataJson == null ||
-                    unUploadDataJson.equals("")){
-                Log.d(TAG,"unUploadDataJson:"+gson.toJson(newRecordDetail));
-                editor.putString("UnUploadData",
-                        gson.toJson(newRecordDetail));
-                editor.apply();
-            } else{
-                List<PointDetails> allUnUploadData =
-                        gson.fromJson(unUploadDataJson,
-                                new TypeToken<List<PointDetails>>(){}.getType());
-                allUnUploadData.addAll(newRecordDetail);
-                Log.d(TAG,"unUploadDataJson:"+gson.toJson(allUnUploadData));
-                editor.putString("UnUploadData",
-                        gson.toJson(allUnUploadData));
-                editor.apply();
-            }
-        }*/
+    protected void onPause() {
+        super.onPause();
+        // activity 暂停时同时暂停地图控件
+        for(TextureMapView it:textureMapViews){
+            it.onPause();
+        }
+
     }
-
-
 
     @Override
     public boolean onKeyDown(int keyCode,KeyEvent event){
@@ -847,6 +890,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         }
         return false;
     }
+
 
     public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
 
@@ -1048,8 +1092,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                     try {
                         Bitmap bitmap = BitmapFactory.decodeStream
                                 (getContentResolver().openInputStream(mImgUri));
-                        // 将裁剪后的照片显示出来
-                        //imageView[imageViewIndex%3].setImageBitmap(bitmap);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -1079,12 +1121,13 @@ public class RecordDetailActivity extends AppCompatActivity {
     }
 
     @Override
-
     protected void onDestroy() {
         super.onDestroy();
-        LocationUtils.getInstance( this ).removeLocationUpdatesListener();
-        for(View v:viewList){
-            Glide.clear(v);
+        // 退出时销毁定位
+        mLocClient.stop();
+        // activity 恢复时同时恢复地图控件
+        for(TextureMapView it:textureMapViews){
+            it.onDestroy();
         }
     }
 
@@ -1174,9 +1217,9 @@ public class RecordDetailActivity extends AppCompatActivity {
             int tempIndex = imageViewIndex.get(morePagerAdapter.getPrimaryItemIndex())%3;
             switch (tempIndex){
                 case 0:
-                    ImageView image1 = morePagerAdapter.getPrimaryItem().
+                    final ImageView image1 = morePagerAdapter.getPrimaryItem().
                             findViewById(R.id.image_1);
-                    Glide
+                    GlideApp
                             .with(RecordDetailActivity.this)
                             .load(imagePath)
                             .into(image1);
@@ -1186,7 +1229,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                         @Override
                         public void onClick(View v) {
                             getBigPicture(imagePath);
-
                         }
                     });
                     break;
@@ -1372,87 +1414,127 @@ public class RecordDetailActivity extends AppCompatActivity {
         }
     }
 
-    public  class MyOverlay extends Overlay {
-        private Drawable mDrawable;
-        private GeoPoint mGeoPoint;
-        private DrawableOption mOption;
+    /**
+     * 设置中心点
+     */
+    private void setUserMapCenter(Coordinate center, BaiduMap mBaiduMap) {
+        LatLng cenpt = new LatLng(center.getLatitude(),center.getLongitude());
+        //定义地图状态
+        MapStatus mMapStatus = new MapStatus.Builder()
+                .target(cenpt)
+                .zoom(18)
+                .build();
+        //定义MapStatusUpdate对象，以便描述地图状态将要发生的变化
+        MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newMapStatus(mMapStatus);
+        //改变地图状态
+        mBaiduMap.setMapStatus(mMapStatusUpdate);
+    }
 
-        public MyOverlay() {
-            mDrawable = RecordDetailActivity.this.getResources().getDrawable(R.drawable.poiresult);
-            mOption = new DrawableOption();
-            mOption.setAnchor(0.5f, 1.0f);
+    /**
+     * 更新地图状态显示面板
+     */
+    private void updateMapState(BaiduMap mBaiduMap, LatLng currentPt) {
+        if (currentPt == null) {
+        } else {
+            MarkerOptions ooA = new MarkerOptions().position(currentPt).icon(bdA);
+            mBaiduMap.clear();
+            mBaiduMap.addOverlay(ooA);
+
+            MapStatus.Builder builder = new MapStatus.Builder();
+            builder.target(currentPt).zoom(16.0f);
+            mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
         }
+    }
 
-        public void setGeoPoint(GeoPoint point) {
-            mGeoPoint = point;
-        }
-
-        public Coordinate getGeoPoint(){
-            return new Coordinate(mGeoPoint.getLongitudeE6(),mGeoPoint.getLatitudeE6());
-        }
-
+    /**
+     * 定位SDK监听函数
+     */
+    public class MyLocationListener implements BDLocationListener {
 
         @Override
-        public boolean onTap(GeoPoint point, MapView mapView) {
-            mGeoPoint = point;
-            //more_information.setText("" + point.getLongitudeE6()+ " "+point.getLatitudeE6());
-            // mCbShowView.setChecked(true);
-
-            return true;
-        }
-
-        @Override
-        public boolean onKeyUp(int keyCode, KeyEvent event, MapView mapView) {
-            return super.onKeyUp(keyCode, event, mapView);
-        }
-
-        @Override
-        public boolean onKeyDown(int keyCode, KeyEvent event, MapView mapView) {
-
-            return super.onKeyDown(keyCode, event, mapView);
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event, MapView mapView) {
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-
-                    break;
-                case MotionEvent.ACTION_MOVE:
-
-                    break;
-                case MotionEvent.ACTION_UP:
-
-                    break;
-                default:
-                    break;
-            }
-            return super.onTouchEvent(event, mapView);
-        }
-
-        @Override
-        public boolean onLongPress(GeoPoint p, MapView mapView) {
-            return super.onLongPress(p, mapView);
-        }
-
-        @Override
-        public boolean isVisible() {
-            return super.isVisible();
-        }
-
-        @Override
-        public void setVisible(boolean b) {
-            super.setVisible(b);
-        }
-
-        @Override
-        public void draw(GL10 gl, MapView mapView, boolean shadow) {
-            if (shadow)
+        public void onReceiveLocation(BDLocation location) {
+            if (location == null) {
                 return;
+            }
+            mCurrentLat = location.getLatitude();
+            mCurrentLon = location.getLongitude();
+            Log.d("lala","mCurrentLon:"+mCurrentLon+" mCurrentLat:"+mCurrentLat);
 
-            MapViewRender render = mapView.getMapViewRender();
-            render.drawDrawable(gl, mOption, mDrawable, mGeoPoint);
-            //mapView.getController().setCenter(mGeoPoint);
+            Iterator<Map.Entry<BaiduMap, Boolean>> it = baiduMaps.entrySet().iterator();
+            while(it.hasNext()){
+                Map.Entry<BaiduMap, Boolean> entry = it.next();
+                if(!entry.getValue()){
+                    updateMapState(entry.getKey(),new LatLng(mCurrentLat,mCurrentLon));//定位
+                    entry.setValue(true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class RecordUploadTask extends AsyncTask<Void, Void, String> {
+
+        private final String detailData;
+
+        RecordUploadTask(String jsonData) {
+            detailData = jsonData;
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            Log.d("lala","DetailData:"+detailData);
+            String request = "fname=" +"input_data"+
+                    "&fparam={\"data\":[" +detailData+
+                     "]}";
+            String ans = null;
+            try{
+                ans = OKHttpUtils.post(url,request);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            Log.d("lala","ans:"+ans);
+            return ans;
+        }
+
+        @Override
+        protected void onPostExecute(final String success) {
+            mAuthTask = null;
+            showProgress(false);
+            if(success == null){
+                Toast.makeText(RecordDetailActivity.this,"上传失败请重试",Toast.LENGTH_LONG).show();
+                return;
+            }
+            String temp = success.replace("/n","");
+            Log.d("lala","success:"+temp.trim());
+
+
+            Boolean isNum;
+            try {
+                Integer.parseInt(temp.trim());
+                isNum = true;
+            } catch (NumberFormatException e) {
+                isNum = false;
+            }
+
+            if (isNum) {
+                Toast.makeText(RecordDetailActivity.this,"上传成功",Toast.LENGTH_LONG).show();
+                Intent intent = new Intent();
+                int listViewPosition = getIntent().getIntExtra("listViewPosition",-1);
+                intent.putExtra("listViewPosition",listViewPosition);
+                RecordDetailActivity.this.setResult(RESULT_FIRST_USER, intent);
+                RecordDetailActivity.this.finish();
+            } else {
+                Toast.makeText(RecordDetailActivity.this,"上传失败请重试",Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            showProgress(false);
         }
     }
 }
