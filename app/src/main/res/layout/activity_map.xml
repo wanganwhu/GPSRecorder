@@ -45,7 +45,7 @@ android:layout_height="match_parent"
 
         </LinearLayout>
 
-        <com.baidu.mapapi.map.MapView
+        <com.baidu.mapapi.map.TextureMapView
             android:id="@+id/main_map_view"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"

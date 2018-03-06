@@ -53,6 +53,7 @@ import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
 import com.readystatesoftware.systembartint.SystemBarTintManager;
 
@@ -78,7 +79,7 @@ public class MapActivity extends Activity implements View.OnClickListener,Sensor
     BitmapDescriptor bdA = BitmapDescriptorFactory
             .fromResource(R.drawable.icon_marka);
 
-    MapView mMapView;
+    TextureMapView mMapView;
     BaiduMap mBaiduMap;
 
     boolean isFirstLoc = true; // 是否首次定位
@@ -98,7 +99,7 @@ public class MapActivity extends Activity implements View.OnClickListener,Sensor
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);//获取传感器管理服务
 
         // 定位初始化
-        mLocClient = new LocationClient(this);
+        mLocClient = new LocationClient(getApplicationContext());
         mLocClient.registerLocationListener(myListener);
         LocationClientOption option = new LocationClientOption();
         option.setOpenGps(true); // 打开gps

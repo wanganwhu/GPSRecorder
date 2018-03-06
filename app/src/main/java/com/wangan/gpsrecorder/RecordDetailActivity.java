@@ -124,8 +124,6 @@ public class RecordDetailActivity extends AppCompatActivity {
 
     //此activity中填写的所有信息
     PointDetails pointDetails = new PointDetails();
-    //此activity中填写的所有信息（当保存的sharedperferences为空时，包装一下，方便存储）
-    private
     //此activity中填写的点信息集合
     List<PointData> pointDataList = new ArrayList<>();
 
@@ -172,7 +170,7 @@ public class RecordDetailActivity extends AppCompatActivity {
         LocationClientOption option = new LocationClientOption();
         option.setOpenGps(true); // 打开gps
         option.setCoorType("bd09ll"); // 设置坐标类型
-        option.setScanSpan(1000);
+        option.setScanSpan(3000);
         mLocClient.setLocOption(option);
         mLocClient.start();
 
@@ -186,8 +184,8 @@ public class RecordDetailActivity extends AppCompatActivity {
         editor = sharedPreferences.edit();
         pref = getSharedPreferences("data",MODE_PRIVATE);
 
-        /*geometryType = getIntent().getStringExtra("geometryType")==null?""
-                :getIntent().getStringExtra("geometryType");*/
+        geometryType = getIntent().getStringExtra("geometryType")==null?""
+                :getIntent().getStringExtra("geometryType");
 
         isReload = getIntent().getIntExtra("reload",0);
         if(geometryType.equals("point")){
@@ -225,13 +223,15 @@ public class RecordDetailActivity extends AppCompatActivity {
         addPointRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                pointDataList.add(new PointData());
+
                 View view2 =  inflater.inflate(R.layout.record_detail_layout,
                         null);
                 viewList.add(view2);
                 morePagerAdapter.notifyDataSetChanged();
                 imageViewIndex.add(2);//增加一个图片下标
                 imagePaths.add(new String[3]);
-                pointDataList.add(new PointData());
+
             }
         });
 
@@ -284,7 +284,7 @@ public class RecordDetailActivity extends AppCompatActivity {
             final EditText more_information;
 
             //此view保存的信息
-            final PointData pointData = new PointData();
+            final PointData pointData = pointDataList.get(position);
 
             scene1 = viewList.get(position).findViewById(R.id.scene1);
             scene2 = viewList.get(position).findViewById(R.id.scene2);
@@ -472,9 +472,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                                     more_information.getText().toString().trim());
                             pointData.setImage(imagePaths.get(position));
 
-                            pointDataList.set(position,pointData);
                             pointDetails.setData(pointDataList);
-
 
                             //创建退出对话框
                             AlertDialog.Builder isExit=new AlertDialog.
@@ -486,7 +484,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                                     new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            //TODO  上传模块
                                             showProgress(true);
                                             mAuthTask = new RecordUploadTask(gson.toJson(pointDetails));
                                             mAuthTask.execute((Void) null);
@@ -562,7 +559,7 @@ public class RecordDetailActivity extends AppCompatActivity {
                             pointData.setOtherInformation(
                                     more_information.getText().toString().trim());
                             pointData.setImage(imagePaths.get(position));
-                            pointDataList.set(position,pointData);
+
                             Toast.makeText(RecordDetailActivity.this,
                                     "保存成功,请输入下一个设施点信息",
                                     Toast.LENGTH_SHORT).show();
@@ -601,7 +598,6 @@ public class RecordDetailActivity extends AppCompatActivity {
                                 more_information.getText().toString().trim());
                         pointData.setImage(imagePaths.get(position));
 
-                        pointDataList.set(position,pointData);
                         pointDetails.setData(pointDataList);
 
                         //创建退出对话框
@@ -1460,13 +1456,18 @@ public class RecordDetailActivity extends AppCompatActivity {
             mCurrentLon = location.getLongitude();
             Log.d("lala","mCurrentLon:"+mCurrentLon+" mCurrentLat:"+mCurrentLat);
 
+
+            int index = 0;
             Iterator<Map.Entry<BaiduMap, Boolean>> it = baiduMaps.entrySet().iterator();
             while(it.hasNext()){
                 Map.Entry<BaiduMap, Boolean> entry = it.next();
                 if(!entry.getValue()){
                     updateMapState(entry.getKey(),new LatLng(mCurrentLat,mCurrentLon));//定位
                     entry.setValue(true);
+                    pointDataList.get(index).setCoordinate(new Coordinate(mCurrentLon,mCurrentLat));
+
                 }
+                index++;
             }
         }
     }

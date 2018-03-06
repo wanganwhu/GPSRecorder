@@ -9,6 +9,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -34,26 +35,20 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.baidu.mapapi.SDKInitializer;
-import com.wangan.gpsrecorder.model.PointDetails;
+
 import com.wangan.gpsrecorder.util.OKHttpUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,23 +66,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final int REQUEST_READ_CONTACTS = 0;
 
     /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
-
-    /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
+
+    //声明一个SharedPreferences对象和一个Editor对象
+    private SharedPreferences preferences;
+    private SharedPreferences.Editor editor;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private CheckBox mRememberPasswordView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,6 +120,39 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        mRememberPasswordView = findViewById(R.id.remember_password);
+        mRememberPasswordView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(!isChecked) {
+                    //否则将密码清除
+                    editor.remove("username");
+                    editor.remove("password");
+                    editor.apply();
+                }
+            }
+        });
+
+        //获取preferences和editor对象
+        preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
+        editor = preferences.edit();
+
+        /*
+        启动程序时首先检查sharedPreferences中是否储存有用户名和密码
+        若无，则将checkbox状态显示为未选中
+        若有，则直接中sharedPreferences中读取用户名和密码，并将checkbox状态显示为已选中
+        这里getString()方法需要两个参数，第一个是键，第二个是值。
+        启动程序时我们传入需要读取的键，值填null即可。若有值则会自动显示，没有则为空。
+         */
+        String name = preferences.getString("username",null);
+        String password = preferences.getString("password", null);
+        if (name == null) {
+            mRememberPasswordView.setChecked(false);
+        } else {
+            mEmailView.setText(name);
+            mPasswordView.setText(password);
+            mRememberPasswordView.setChecked(true);
+        }
     }
 
     @Override
@@ -482,7 +507,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
 
             if (s == 1) {
-                //finish();
+                if(mRememberPasswordView.isChecked()){
+                    editor.putString("username", mEmail);
+                    editor.putString("password", mPassword);
+                    editor.apply();
+                }
                 Intent intent = new Intent(LoginActivity.this, MapActivity.class);
                 intent.putExtra("username",mEmail);
                 intent.putExtra("password",mPassword);

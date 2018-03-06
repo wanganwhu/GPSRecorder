@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Register progress -->
+    <!-- Upload progress -->
     <ProgressBar
         android:id="@+id/detail_upload_progress"
         style="?android:attr/progressBarStyleLarge"
@@ -48,5 +48,46 @@
         android:background="@android:color/white">
 
     </com.wangan.gpsrecorder.util.ViewPagerCompat>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <com.baidu.mapapi.map.TextureMapView
+            android:id="@+id/detail_map_view"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:clickable="true" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp">
+
+        <Button
+            android:id="@+id/save_point_details"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:text="保存" />
+
+        <Button
+            android:id="@+id/save_all_points_details"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:text="结束当前采集" />
+
+        <Button
+            android:id="@+id/cancel_point_details"
+            android:layout_width="0dp"
+            android:layout_weight="10"
+            android:layout_height="match_parent"
+            android:text="取消"/>
+    </LinearLayout>
 
 </LinearLayout>
